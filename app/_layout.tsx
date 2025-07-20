@@ -37,6 +37,8 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)/chat"options={{title: "Chat",headerShown: false,}}/>
           <Stack.Screen name="(tabs)/profile"options={{title: "Profile",headerShown: false}}/>
           <Stack.Screen name="(tabs)/rides"options={{title: "Rides",headerShown: false,}}/>
+          <Stack.Screen name="(root)"options={{headerShown: false,}}/>
+          <Stack.Screen name="(auth)"options={{headerShown: false,}}/>
         </Stack>
   );
 }
