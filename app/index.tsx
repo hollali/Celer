@@ -4,7 +4,7 @@ import { SafeAreaView, Text } from 'react-native'
 const Home = () => {
   return (
     <SafeAreaView>
-      <Text className=''>Home</Text>
+      <Text className='text-danger-700 font-JakartaSemiBold'>Home</Text>
     </SafeAreaView>
   )
 }
