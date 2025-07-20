@@ -3,7 +3,7 @@ import "react-native-reanimated";
 
 
 
-export default function RootLayout() {
+const Layout =() => {
 	
 	return (
 		<Stack>
@@ -13,3 +13,4 @@ export default function RootLayout() {
 		</Stack>
 	);
 }
+export default Layout;
