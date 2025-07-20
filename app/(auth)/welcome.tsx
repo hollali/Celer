@@ -1,3 +1,4 @@
+import { onboarding } from "@/constants";
 import { router } from "expo-router";
 import React, { useRef } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
@@ -21,10 +22,11 @@ const Onboarding = () => {
             paginationStyle={{ bottom: 50 }}
             onIndexChanged={(index) => setActiveIndex(index)}
             >
-                <View className="flex-1 items-center justify-center">
-                    <Text className="text-black text-lg font-JakartaBold">Welcome to the App!</Text>
-                </View>
-                {/* Add more slides as needed */}
+                {onboarding.map((item) => (
+                    <View>
+                        <Text>{item.title}</Text>
+                    </View>
+                ))}
             </Swiper>
         </SafeAreaView>
     );
