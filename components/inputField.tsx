@@ -1,12 +1,12 @@
 import {
-  TextInput,
-  View,
-  Text,
   Image,
-  KeyboardAvoidingView,
-  TouchableWithoutFeedback,
   Keyboard,
+  KeyboardAvoidingView,
   Platform,
+  Text,
+  TextInput,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 
 import { InputFieldProps } from "@/types/type";
@@ -40,6 +40,7 @@ const InputField = ({
             <TextInput
               className={`rounded-full p-4 font-JakartaSemiBold text-[15px] flex-1 ${inputStyle} text-left`}
               secureTextEntry={secureTextEntry}
+              placeholderTextColor="#888"
               {...props}
             />
           </View>
