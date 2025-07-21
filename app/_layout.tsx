@@ -1,9 +1,13 @@
+import { ClerkProvider } from '@clerk/clerk-expo';
+import { tokenCache } from '@clerk/clerk-expo/token-cache';
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { Slot, Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import "react-native-reanimated";
 import './global.css';
+
+
 
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -31,7 +35,8 @@ export default function RootLayout() {
   }
 
   return (
-        <Stack>
+    <ClerkProvider tokenCache={tokenCache}>
+      <Stack>
           <Stack.Screen name="index"options={{headerShown: false,}}/>
           <Stack.Screen name="(tabs)/home"options={{title: "Home",headerShown: false,}}/>
           <Stack.Screen name="(tabs)/chat"options={{title: "Chat",headerShown: false,}}/>
@@ -40,5 +45,7 @@ export default function RootLayout() {
           <Stack.Screen name="(root)"options={{headerShown: false,}}/>
           <Stack.Screen name="(auth)"options={{headerShown: false,}}/>
         </Stack>
+    </ClerkProvider>
+    
   );
 }
