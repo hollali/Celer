@@ -21,7 +21,6 @@ const Onboarding = () => {
             <Swiper ref={swiperRef} showsButtons={false} loop={false} 
             dot={<View className="w-[32px] h-[4px] mx-1 bg-[#E2E8F0] rounded-full"/>}
             activeDot={<View className="w-[32px] h-[4px] mx-1 bg-[#0286FF] rounded-full"/>} 
-            paginationStyle={{ bottom: 50 }}
             onIndexChanged={(index) => setActiveIndex(index)}
             >
                 {onboarding.map((item) => (
@@ -37,8 +36,8 @@ const Onboarding = () => {
             <CustomButton 
             title={isLastSlide ? "Get Started" : "Next"}
             onPress={() => 
-                isLastSlide ? 
-                router.replace("/(auth)/sign-up") 
+                isLastSlide 
+                ? router.replace("/(auth)/sign-up") 
                 : swiperRef.current?.scrollTo(1)} 
             className="w-11/12 mt-10 mb-5"/>
         </SafeAreaView>
