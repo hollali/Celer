@@ -39,8 +39,8 @@ const Onboarding = () => {
             onPress={() => 
                 isLastSlide ? 
                 router.replace("/(auth)/sign-up") 
-                : swiperRef.current?.scrollTo(activeIndex + 1)} 
-            className="w-11/12 mt-10"/>
+                : swiperRef.current?.scrollTo(1)} 
+            className="w-11/12 mt-10 mb-5"/>
         </SafeAreaView>
     );
 };
