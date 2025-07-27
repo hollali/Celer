@@ -11,7 +11,7 @@ const Onboarding = () => {
     const [activeIndex, setActiveIndex] = React.useState(0);
     const isLastSlide = activeIndex === onboarding.length - 1;
 	return (
-		<SafeAreaView className="h-full items-center justify-between bg-white">
+		<SafeAreaView className="flex h-full items-center justify-between bg-white">
             <TouchableOpacity
             onPress={() => {router.replace("/(auth)/sign-up")}}
             className="w-full flex justify-end items-end p-5"  
@@ -39,7 +39,7 @@ const Onboarding = () => {
                 isLastSlide 
                 ? router.replace("/(auth)/sign-up") 
                 : swiperRef.current?.scrollBy(1)} 
-            className="w-11/12 mt-10 mb-5"/>
+            className="w-11/12 mt-10 mb-6"/>
         </SafeAreaView>
     );
 };
