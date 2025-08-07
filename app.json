@@ -4,7 +4,7 @@
     "slug": "Celer",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/celer-favicon.png",
     "scheme": "celer",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -29,7 +29,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash.png",
+          "image": "./assets/image/celer-splash.png",
           "resizeMode": "contain",
           "backgroundColor": "#2F80ED"
         }
