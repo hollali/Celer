@@ -10,6 +10,7 @@ import { ReactNativeModal } from "react-native-modal";
 
 const SignUp = () => {
 	const { isLoaded, signUp, setActive } = useSignUp();
+	const [showSuccessModal, setShowSuccessModal] = useState(false);
 	const [form, setForm] = useState({
 		name: "",
 		email: "",
@@ -125,7 +126,11 @@ const SignUp = () => {
 					</Link>
 				</View>
 				<ReactNativeModal isVisible={verification.state === 'pending'}
-				onModalHide={() => setVerification({...verification, state: "success"})}>
+				onModalHide={() => {
+					if (verification.state === 'success') {
+						setShowSuccessModal(true);
+					}
+				}}>
 					<View className="bg-white px-7 py-9 rounded-2xl min-h-[300px]">
 						<Text className="text-2xl font-JakartaExtraBold mb-2">
 							Verification
@@ -153,7 +158,7 @@ const SignUp = () => {
 						/>
 					</View>
 				</ReactNativeModal>
-				<ReactNativeModal isVisible={verification.state === 'success'}>
+				<ReactNativeModal isVisible={showSuccessModal}>
 					<View className="bg-white px-7 py-9 rounded-2xl min-h-[300px]">
 						<Image source={images.check} className="w-[110px] h-[110px] mx-auto my-5"/>
 						<Text className="text-3xl font-JakartaBold text-center">
