@@ -3,7 +3,7 @@ import { Link } from "expo-router";
 import { Text, View } from "react-native";
 //import { SignOutButton } from "@/app/components/SignOutButton";
 
-export default function Page() {
+const Home = () => {
 	const { user } = useUser();
 
 	return (
@@ -23,3 +23,4 @@ export default function Page() {
 		</View>
 	);
 }
+export default Home;
