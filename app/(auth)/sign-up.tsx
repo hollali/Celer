@@ -168,7 +168,7 @@ const SignUp = () => {
 							Your account has been successfully verified.
 						</Text>
 						<CustomButton title="continue"
-						onPress={() => router.replace("/(root)/(tabs)/home")}
+						onPress={() => router.push("/(root)/(tabs)/home")}
 						className="mt-5"
 						/>
 					</View>
