@@ -8,7 +8,7 @@ const Home = () => {
 	const { user } = useUser();
 
 	return (
-		<SafeAreaView >
+		<SafeAreaView className="flex-1 items-center justify-center bg-general-100">
 			<SignedIn>
 				<Text>Hello {user?.emailAddresses[0].emailAddress} to Celer</Text>
 				{/*<SignOutButton />*/}
