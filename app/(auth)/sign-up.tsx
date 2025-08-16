@@ -35,7 +35,6 @@ const SignUp = () => {
 
 			// Send user an email with verification code
 			await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-
 			// Set 'pendingVerification' to true to display second form
 			// and capture OTP code
 			setVerification({
@@ -168,7 +167,7 @@ const SignUp = () => {
 							Your account has been successfully verified.
 						</Text>
 						<CustomButton title="continue"
-						onPress={() => router.push("/(root)/(tabs)/home")}
+						onPress={() => router.push(`/(root)/(tabs)/home`)}
 						className="mt-5"
 						/>
 					</View>
