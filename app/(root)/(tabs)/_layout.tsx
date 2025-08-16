@@ -1,6 +1,6 @@
+import { icons } from "@/constants";
 import { Tabs } from "expo-router";
 import { Image, ImageSourcePropType, View } from "react-native";
-import { icons } from "@/constants";
 
 const TabIcon = ({
 	source,
@@ -26,7 +26,7 @@ const TabIcon = ({
 export default function Layout() {
 	return (
 		<Tabs
-			initialRouteName="index"
+			initialRouteName="home"
 			screenOptions={{
 				tabBarActiveTintColor: "white",
 				tabBarInactiveTintColor: "white",
