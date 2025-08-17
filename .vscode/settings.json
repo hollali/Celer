@@ -4,5 +4,8 @@
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
   },
-  "terminal.integrated.suggest.enabled": true
+  "terminal.integrated.suggest.enabled": true,
+  "cSpell.words": [
+    "neondatabase"
+  ]
 }
