@@ -15,7 +15,7 @@ const TabIcon = ({
 			className={`rounded-full w-12 h-12 items-center justify-center ${focused ? "bg-general-400" : ""}`}>
 			<Image
 				source={source}
-				tintColor="white"
+				style={{ tintColor: focused ? "#ffffff" : "#9ca3af" }} // white vs gray-400
 				resizeMode="contain"
 				className="w-7 h-7"
 			/>
