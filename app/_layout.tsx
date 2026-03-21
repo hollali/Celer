@@ -8,7 +8,9 @@ import "react-native-reanimated";
 import "./global.css";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+void SplashScreen.preventAutoHideAsync().catch((error) => {
+	console.warn("Failed to prevent splash screen auto-hide:", error);
+});
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 if (!publishableKey) {
@@ -30,7 +32,9 @@ export default function RootLayout() {
 
 	useEffect(() => {
 		if (loaded) {
-			SplashScreen.hideAsync();
+			void SplashScreen.hideAsync().catch((error) => {
+				console.warn("Failed to hide splash screen:", error);
+			});
 		}
 	}, [loaded]);
 
