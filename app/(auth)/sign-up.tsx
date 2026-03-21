@@ -6,7 +6,7 @@ import { useSignUp } from "@clerk/clerk-expo";
 import { Link, router } from "expo-router";
 import React, { useState } from "react";
 import { Alert, Image, ScrollView, Text, View } from "react-native";
-import { ReactNativeModal } from "react-native-modal";
+import ReactNativeModal from "react-native-modal";
 
 const SignUp = () => {
 	const { isLoaded, signUp, setActive } = useSignUp();
@@ -65,7 +65,6 @@ const SignUp = () => {
 			if (signUpAttempt.status === "complete") {
 				await setActive({ session: signUpAttempt.createdSessionId });
 				setVerification({...verification, state: "success", code: "" });
-				router.replace("/");
 			} else {
 				setVerification({
 					...verification,
