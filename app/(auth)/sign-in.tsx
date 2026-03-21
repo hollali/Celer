@@ -34,9 +34,11 @@ const SignIn = () => {
       }
     } catch (err: any) {
       console.log(JSON.stringify(err, null, 2));
-      Alert.alert("Error", err.errors[0].longMessage);
+      const message =
+        err?.errors?.[0]?.longMessage ?? "Log in failed. Please try again.";
+      Alert.alert("Error", message);
     }
-  }, [isLoaded, form]);
+  }, [form, isLoaded, router, setActive, signIn]);
 
   return (
     <ScrollView className="flex-1 bg-white">
