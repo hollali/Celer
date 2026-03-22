@@ -170,6 +170,8 @@ Create a `.env` file in the project root. **Never commit this file to version co
 ```env
 # ── Clerk Authentication ─────────────────────────────────────
 EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_xxxxxxxxxxxx
+# Match this with your Clerk Email verification setting: email_code or email_link
+EXPO_PUBLIC_CLERK_EMAIL_VERIFICATION_STRATEGY=email_code
 
 # ── Neon Database ────────────────────────────────────────────
 DATABASE_URL=postgresql://user:pass@ep-xxx.neon.tech/dbname?sslmode=require
@@ -202,6 +204,7 @@ Celer uses [Clerk](https://clerk.com) for authentication, supporting Google, Fac
 4. Set your OAuth redirect URL:
    - Development: `exp://your-ip:8081`
    - Production: your custom URI scheme
+5. Ensure your local `EXPO_PUBLIC_CLERK_EMAIL_VERIFICATION_STRATEGY` matches the verification strategy configured in your Clerk dashboard, or sign-up will fail with `strategy_for_user_invalid`.
 
 ### Username Handling
 
