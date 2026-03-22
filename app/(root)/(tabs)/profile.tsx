@@ -232,7 +232,7 @@ const Profile = () => {
 
 					{/* ── App version ── */}
 					<Text className="mt-6 text-center text-xs font-JakartaMedium uppercase tracking-widest text-gray-300">
-						APP VERSION 1.0.0 • HOMMIE
+						APP VERSION 1.0.0 • CELER
 					</Text>
 				</ScrollView>
 			</SignedIn>
