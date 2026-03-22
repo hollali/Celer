@@ -1,4 +1,5 @@
 import { SignedIn, SignedOut, useAuth, useUser } from "@clerk/clerk-expo";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, router } from "expo-router";
 import React from "react";
 import {
@@ -16,7 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const RowDivider = () => <View className="h-px bg-gray-100 mx-4" />;
 
 interface MenuRowProps {
-	icon: string;
+	icon: React.ComponentProps<typeof Ionicons>["name"];
 	label: string;
 	badge?: string;
 	onPress: () => void;
@@ -30,8 +31,8 @@ const MenuRow = ({ icon, label, badge, onPress, danger = false }: MenuRowProps) 
 		className="flex-row items-center px-5 py-4"
 	>
 		{/* Icon circle */}
-		<View className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center mr-4">
-			<Text style={{ fontSize: 18 }}>{icon}</Text>
+		<View className="mr-4 h-10 w-10 items-center justify-center rounded-full bg-slate-100">
+			<Ionicons name={icon} size={18} color={danger ? "#EF4444" : "#0F172A"} />
 		</View>
 
 		{/* Label */}
@@ -53,13 +54,13 @@ const MenuRow = ({ icon, label, badge, onPress, danger = false }: MenuRowProps) 
 		)}
 
 		{/* Chevron */}
-		<Text className="text-gray-300 text-xl leading-none">›</Text>
+		<Ionicons name="chevron-forward" size={18} color="#94A3B8" />
 	</TouchableOpacity>
 );
 
 // ─── Quick Action Button ──────────────────────────────────────────────────────
 interface QuickActionProps {
-	icon: string;
+	icon: React.ComponentProps<typeof Ionicons>["name"];
 	label: string;
 	onPress: () => void;
 }
@@ -68,12 +69,12 @@ const QuickAction = ({ icon, label, onPress }: QuickActionProps) => (
 	<TouchableOpacity
 		onPress={onPress}
 		activeOpacity={0.7}
-		className="flex-1 items-center bg-gray-100 rounded-2xl py-4 gap-2"
+		className="flex-1 items-center rounded-2xl border border-slate-200 bg-slate-50 py-4 gap-2"
 	>
-		<View className="w-11 h-11 rounded-full bg-white items-center justify-center shadow-sm">
-			<Text style={{ fontSize: 20 }}>{icon}</Text>
+		<View className="h-11 w-11 items-center justify-center rounded-full bg-white">
+			<Ionicons name={icon} size={19} color="#0F172A" />
 		</View>
-		<Text className="text-sm font-JakartaMedium text-gray-700">{label}</Text>
+		<Text className="text-sm font-JakartaMedium text-slate-700">{label}</Text>
 	</TouchableOpacity>
 );
 
@@ -112,21 +113,21 @@ const Profile = () => {
 					contentContainerStyle={{ paddingBottom: 48 }}
 				>
 					{/* ── Top bar ── */}
-					<View className="flex-row items-center justify-between px-5 pt-4 pb-2">
+					<View className="flex-row items-center justify-between px-5 pb-2 pt-4">
 						<TouchableOpacity
 							onPress={() => router.back()}
-							className="w-9 h-9 items-center justify-center"
+							className="h-9 w-9 items-center justify-center rounded-full bg-slate-100"
 						>
-							<Text style={{ fontSize: 22 }}>←</Text>
+							<Ionicons name="chevron-back" size={20} color="#0F172A" />
 						</TouchableOpacity>
-						<Text className="text-lg font-JakartaBold text-gray-900">
+						<Text className="text-lg font-JakartaBold text-slate-900">
 							Account
 						</Text>
 						<TouchableOpacity
 							onPress={() => router.push("/(root)/settings" as any)}
-							className="w-9 h-9 items-center justify-center"
+							className="h-9 w-9 items-center justify-center rounded-full bg-slate-100"
 						>
-							<Text style={{ fontSize: 22 }}>⚙️</Text>
+							<Ionicons name="settings-outline" size={19} color="#0F172A" />
 						</TouchableOpacity>
 					</View>
 
@@ -147,8 +148,8 @@ const Profile = () => {
 								</View>
 							)}
 							{/* Star badge — bottom-right */}
-							<View className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-green-500 items-center justify-center border-2 border-white">
-								<Text style={{ fontSize: 14 }}>⭐</Text>
+							<View className="absolute bottom-1 right-1 h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-emerald-500">
+								<Ionicons name="checkmark" size={15} color="#FFFFFF" />
 							</View>
 						</View>
 
@@ -158,10 +159,9 @@ const Profile = () => {
 						</Text>
 
 						{/* Rating · Member since */}
-						<View className="flex-row items-center mt-1 gap-1">
-							<Text className="text-sm font-Jakarta text-gray-500">
-								{rating} Rating
-							</Text>
+						<View className="mt-1 flex-row items-center gap-1">
+							<MaterialCommunityIcons name="star-four-points" size={13} color="#16A34A" />
+							<Text className="text-sm font-Jakarta text-gray-500">{rating} Rating</Text>
 							<Text className="text-gray-300 mx-1">•</Text>
 							<Text className="text-sm font-Jakarta text-gray-500">
 								Member since {joinedDate}
@@ -172,45 +172,45 @@ const Profile = () => {
 					{/* ── Quick actions ── */}
 					<View className="flex-row gap-3 px-5 mt-4">
 						<QuickAction
-							icon="🕐"
+							icon="time-outline"
 							label="History"
 							onPress={() => router.push("/(root)/ride-history" as any)}
 						/>
 						<QuickAction
-							icon="💳"
+							icon="card-outline"
 							label="Payment"
 							onPress={() => router.push("/(root)/payment" as any)}
 						/>
 						<QuickAction
-							icon="✏️"
+							icon="create-outline"
 							label="Edit"
 							onPress={() => router.push("/(root)/edit-profile" as any)}
 						/>
 					</View>
 
 					{/* ── Menu rows ── */}
-					<View className="mt-6 mx-5 rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden">
+					<View className="mx-5 mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
 						<MenuRow
-							icon="🛡️"
+							icon="shield-checkmark-outline"
 							label="Safety Settings"
 							onPress={() => router.push("/(root)/safety" as any)}
 						/>
 						<RowDivider />
 						<MenuRow
-							icon="🎁"
+							icon="pricetags-outline"
 							label="Promotions"
 							badge="2 NEW"
 							onPress={() => router.push("/(root)/promotions" as any)}
 						/>
 						<RowDivider />
 						<MenuRow
-							icon="❓"
+							icon="help-circle-outline"
 							label="Help & Support"
 							onPress={() => router.push("/(root)/help" as any)}
 						/>
 						<RowDivider />
 						<MenuRow
-							icon="ℹ️"
+							icon="document-text-outline"
 							label="Legal & Privacy"
 							onPress={() => router.push("/(root)/legal" as any)}
 						/>
@@ -221,9 +221,9 @@ const Profile = () => {
 						<TouchableOpacity
 							onPress={handleSignOut}
 							activeOpacity={0.8}
-							className="flex-row items-center justify-center bg-red-50 rounded-full py-4 gap-2"
+							className="flex-row items-center justify-center gap-2 rounded-full bg-red-50 py-4"
 						>
-							<Text style={{ fontSize: 18 }}>↪️</Text>
+							<Ionicons name="log-out-outline" size={18} color="#EF4444" />
 							<Text className="text-base font-JakartaBold text-red-500">
 								Log Out
 							</Text>
@@ -239,7 +239,9 @@ const Profile = () => {
 
 			<SignedOut>
 				<View className="flex-1 items-center justify-center px-6">
-					<Text style={{ fontSize: 48 }}>👤</Text>
+					<View className="h-20 w-20 items-center justify-center rounded-full bg-slate-100">
+						<Ionicons name="person-outline" size={38} color="#64748B" />
+					</View>
 					<Text className="mt-4 text-xl font-JakartaSemiBold text-black">
 						You're not signed in
 					</Text>
