@@ -78,6 +78,24 @@ const QuickAction = ({ icon, label, onPress }: QuickActionProps) => (
 	</TouchableOpacity>
 );
 
+interface StatCardProps {
+	label: string;
+	value: string;
+	icon: React.ComponentProps<typeof Ionicons>["name"];
+}
+
+const StatCard = ({ label, value, icon }: StatCardProps) => (
+	<View className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-4">
+		<View className="h-9 w-9 items-center justify-center rounded-full bg-white">
+			<Ionicons name={icon} size={16} color="#0F172A" />
+		</View>
+		<Text className="mt-3 text-lg font-JakartaBold text-slate-900">{value}</Text>
+		<Text className="mt-1 text-xs font-JakartaMedium uppercase tracking-wide text-slate-500">
+			{label}
+		</Text>
+	</View>
+);
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 const Profile = () => {
 	const { user } = useUser();
@@ -97,6 +115,8 @@ const Profile = () => {
 
 	// Replace with real rating from your backend
 	const rating = "4.98";
+	const totalTrips = "124";
+	const loyaltyTier = "Gold";
 
 	const handleSignOut = () => {
 		Alert.alert("Log Out", "Are you sure you want to log out?", [
@@ -124,10 +144,10 @@ const Profile = () => {
 							Account
 						</Text>
 						<TouchableOpacity
-							onPress={() => router.push("/(root)/settings" as any)}
+							onPress={() => router.push("/(root)/edit-profile" as any)}
 							className="h-9 w-9 items-center justify-center rounded-full bg-slate-100"
 						>
-							<Ionicons name="settings-outline" size={19} color="#0F172A" />
+							<Ionicons name="create-outline" size={19} color="#0F172A" />
 						</TouchableOpacity>
 					</View>
 
@@ -169,8 +189,28 @@ const Profile = () => {
 						</View>
 					</View>
 
+					{/* ── Profile properties ── */}
+					<View className="mt-6 px-5">
+						<Text className="text-sm font-JakartaBold uppercase tracking-widest text-slate-400">
+							Profile Overview
+						</Text>
+						<View className="mt-3 flex-row gap-3">
+							<StatCard label="Rating" value={rating} icon="star-outline" />
+							<StatCard label="Trips" value={totalTrips} icon="car-outline" />
+							<StatCard label="Tier" value={loyaltyTier} icon="ribbon-outline" />
+						</View>
+						<View className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+							<Text className="text-xs font-JakartaBold uppercase tracking-widest text-slate-400">
+								Primary Email
+							</Text>
+							<Text className="mt-2 text-base font-JakartaMedium text-slate-800">
+								{email}
+							</Text>
+						</View>
+					</View>
+
 					{/* ── Quick actions ── */}
-					<View className="flex-row gap-3 px-5 mt-4">
+					<View className="flex-row gap-3 px-5 mt-6">
 						<QuickAction
 							icon="time-outline"
 							label="History"
