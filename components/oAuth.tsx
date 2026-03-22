@@ -11,12 +11,17 @@ const OAuth = () => {
 	const handleGoogleSignIn = async () => {
 		const result = await googleOAuth(startOAuthFlow);
 
-    if (result.code === "session_exists") {
-        Alert.alert("Success", "Session exists. Redirecting to home screen.");
-        router.replace("/(root)/(tabs)/home");
-    }
+		if (result.code === "session_exists") {
+			Alert.alert("Success", "You're already signed in. Redirecting to home screen.");
+			router.replace("/(root)/(tabs)/home");
+			return;
+		}
 
-    Alert.alert(result.success ? "Success" : "Error", result.message);
+		Alert.alert(result.success ? "Success" : "Error", result.message);
+
+		if (result.success) {
+			router.replace("/(root)/(tabs)/home");
+		}
 	};
 
 	return (
