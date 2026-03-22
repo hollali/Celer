@@ -222,9 +222,9 @@ const Profile = () => {
 							onPress={() => router.push("/(root)/payment" as any)}
 						/>
 						<QuickAction
-							icon="create-outline"
-							label="Edit"
-							onPress={() => router.push("/(root)/edit-profile" as any)}
+							icon="help-circle-outline"
+							label="Support"
+							onPress={() => router.push("/(root)/help" as any)}
 						/>
 					</View>
 
