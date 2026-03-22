@@ -121,7 +121,14 @@ const Profile = () => {
 	const handleSignOut = () => {
 		Alert.alert("Log Out", "Are you sure you want to log out?", [
 			{ text: "Cancel", style: "cancel" },
-			{ text: "Log Out", style: "destructive", onPress: () => signOut() },
+			{
+				text: "Log Out",
+				style: "destructive",
+				onPress: async () => {
+					await signOut();
+					router.replace("/(auth)/sign-in");
+				},
+			},
 		]);
 	};
 
