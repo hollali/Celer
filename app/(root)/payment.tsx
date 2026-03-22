@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -6,6 +7,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const Payment = () => {
   return (
     <SafeAreaView className="flex-1 bg-white px-5">
+      <View className="flex-row items-center py-4">
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="chevron-back" size={22} />
+        </TouchableOpacity>
+        <Text className="ml-4 text-lg font-JakartaBold">Payment</Text>
+      </View>
+
       {/* Payment Methods */}
       <View className="mt-6">
         <Text className="text-gray-500 mb-2">Saved Methods</Text>

@@ -1,4 +1,5 @@
 import { useUser } from "@clerk/clerk-expo";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
@@ -20,6 +21,13 @@ const EditProfile = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-white px-5">
+      <View className="flex-row items-center py-4">
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="chevron-back" size={22} />
+        </TouchableOpacity>
+        <Text className="ml-4 text-lg font-JakartaBold">Edit Profile</Text>
+      </View>
+
       {/* Name */}
       <View className="mt-6">
         <Text className="text-gray-500 mb-1">Full Name</Text>

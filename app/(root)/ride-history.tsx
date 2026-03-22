@@ -1,5 +1,7 @@
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React from "react";
-import { ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const rides = [
@@ -20,6 +22,13 @@ const rides = [
 const RideHistory = () => {
   return (
     <SafeAreaView className="flex-1 bg-white">
+      <View className="flex-row items-center px-5 py-4">
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="chevron-back" size={22} />
+        </TouchableOpacity>
+        <Text className="ml-4 text-lg font-JakartaBold">Ride History</Text>
+      </View>
+
       <ScrollView className="px-5">
         {rides.map((ride) => (
           <View

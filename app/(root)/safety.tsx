@@ -1,3 +1,5 @@
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useState } from "react";
 import { Switch, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -8,6 +10,14 @@ const Safety = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
+      {/* Header */}
+      <View className="flex-row items-center px-5 py-4">
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="chevron-back" size={22} />
+        </TouchableOpacity>
+        <Text className="ml-4 text-lg font-JakartaBold">Safety Settings</Text>
+      </View>
+
       {/* Settings */}
       <View className="mx-5 mt-4 rounded-2xl border border-slate-200 overflow-hidden">
         {/* Share trip */}
