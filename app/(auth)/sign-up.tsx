@@ -3,6 +3,7 @@ import InputField from "@/components/inputField";
 import OAuth from "@/components/oAuth";
 import { icons, images } from "@/constants";
 import { useSignUp } from "@clerk/clerk-expo";
+import * as Linking from "expo-linking";
 import { Link, router } from "expo-router";
 import React, { useState } from "react";
 import { Alert, Image, ScrollView, Text, View } from "react-native";
@@ -10,6 +11,10 @@ import ReactNativeModal from "react-native-modal";
 
 const SignUp = () => {
 	const { isLoaded, signUp, setActive } = useSignUp();
+	const verificationStrategy = (process.env.EXPO_PUBLIC_CLERK_EMAIL_VERIFICATION_STRATEGY as
+		| "email_code"
+		| "email_link"
+		| undefined) ?? "email_code";
 	const [showSuccessModal, setShowSuccessModal] = useState(false);
 	const [form, setForm] = useState({
 		name: "",
@@ -33,6 +38,19 @@ const SignUp = () => {
 				password: form.password,
 			});
 
+			if (verificationStrategy === "email_link") {
+				await signUp.prepareEmailAddressVerification({
+					strategy: "email_link",
+					redirectUrl: Linking.createURL("/sign-in"),
+				});
+				Alert.alert(
+					"Check your email",
+					"We sent you a verification link. Open the link to verify your email, then sign in.",
+				);
+				router.push("/sign-in");
+				return;
+			}
+
 			// Send user an email with verification code
 			await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
 			// Set 'pendingVerification' to true to display second form
@@ -43,6 +61,14 @@ const SignUp = () => {
 			});
 		} catch (err) {
 			if (err && typeof err === "object" && "errors" in err && Array.isArray((err as any).errors)) {
+				const clerkCode = (err as any).errors[0]?.code;
+				if (clerkCode === "strategy_for_user_invalid") {
+					Alert.alert(
+						"Email verification strategy mismatch",
+						"Your Clerk instance does not support this verification strategy. Set Clerk Email Verification Strategy in app config (email_code or email_link) to match your Clerk dashboard.",
+					);
+					return;
+				}
 				Alert.alert("Error", ((err as any).errors[0]?.longMessage) || "An error occurred during sign-up");
 			} else {
 				Alert.alert("Error", "An error occurred during sign-up");
