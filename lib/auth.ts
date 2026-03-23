@@ -64,11 +64,16 @@ export const googleOAuth = async (startOAuthFlow: any) => {
 	} catch (err: any) {
 		console.error(err);
 		const errorCode = err?.errors?.[0]?.code ?? err?.code;
-		const longMessage = err?.errors?.[0]?.longMessage;
+		const rawMessage =
+			err?.errors?.[0]?.longMessage ?? err?.errors?.[0]?.message ?? err?.message;
+		const normalizedMessage =
+			typeof rawMessage === "string"
+				? rawMessage.replace(/^e:/i, "").trim()
+				: undefined;
 		const alreadySignedIn =
 			errorCode === "session_exists" ||
-			typeof longMessage === "string" &&
-				longMessage.toLowerCase().includes("already signed in");
+			(typeof normalizedMessage === "string" &&
+				normalizedMessage.toLowerCase().includes("already signed in"));
 
 		if (alreadySignedIn) {
 			return {
@@ -81,7 +86,8 @@ export const googleOAuth = async (startOAuthFlow: any) => {
 		return {
 			success: false,
 			code: errorCode,
-			message: longMessage ?? "An error occurred while signing in with Google",
+			message:
+				normalizedMessage ?? "An error occurred while signing in with Google",
 		};
 	}
 };
