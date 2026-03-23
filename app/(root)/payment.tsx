@@ -14,7 +14,7 @@ type PaymentMethod = {
 const initialMethods: PaymentMethod[] = [
   { id: "pm-1", label: "Visa •••• 1234", expiry: "08/28", brand: "card" },
   { id: "pm-2", label: "Mastercard •••• 4521", expiry: "03/27", brand: "card" },
-  { id: "pm-3", label: "Celer Wallet", expiry: "Balance: $48.20", brand: "wallet" },
+  { id: "pm-3", label: "Celer Wallet", expiry: "Balance: GH₵48.20", brand: "wallet" },
 ];
 
 const Payment = () => {
@@ -39,8 +39,8 @@ const Payment = () => {
   };
 
   const estimatedNextRide = useMemo(() => {
-    if (appliedPromo) return "$16.90";
-    return "$21.00";
+    if (appliedPromo) return "GH₵16.90";
+    return "GH₵21.00";
   }, [appliedPromo]);
 
   return (

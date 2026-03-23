@@ -11,21 +11,21 @@ const rides = [
     id: "1",
     location: "East Legon → Airport",
     date: "Mar 20, 2026",
-    price: "$45.00",
+    price: "GH₵45.00",
     status: "Completed" as RideStatus,
   },
   {
     id: "2",
     location: "Madina → Osu",
     date: "Mar 18, 2026",
-    price: "$32.00",
+    price: "GH₵32.00",
     status: "Completed" as RideStatus,
   },
   {
     id: "3",
     location: "Downtown → Union Station",
     date: "Mar 16, 2026",
-    price: "$0.00",
+    price: "GH₵0.00",
     status: "Canceled" as RideStatus,
   },
 ];
@@ -48,7 +48,7 @@ const RideHistory = () => {
   const totalSpend = useMemo(() => {
     return rides
       .filter((ride) => ride.status === "Completed")
-      .reduce((sum, ride) => sum + Number(ride.price.replace("$", "")), 0)
+      .reduce((sum, ride) => sum + Number(ride.price.replace("GH₵", "")), 0)
       .toFixed(2);
   }, []);
 
@@ -69,7 +69,7 @@ const RideHistory = () => {
           </View>
           <View className="flex-1 rounded-2xl bg-white border border-slate-100 p-4">
             <Text className="text-slate-500 text-xs">Total spend</Text>
-            <Text className="mt-1 font-JakartaBold text-xl text-slate-900">${totalSpend}</Text>
+            <Text className="mt-1 font-JakartaBold text-xl text-slate-900">GH₵{totalSpend}</Text>
           </View>
         </View>
 
