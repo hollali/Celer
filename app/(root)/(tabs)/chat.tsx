@@ -1,3 +1,4 @@
+import { colors } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
@@ -37,7 +38,7 @@ const CONVERSATIONS: Conversation[] = [
     time: "Now",
     unread: 2,
     online: true,
-    avatarColor: "#0286FF",
+    avatarColor: colors.primary[500],
     avatarInitials: "MT",
     pinned: true,
     type: "driver",
@@ -50,7 +51,7 @@ const CONVERSATIONS: Conversation[] = [
     time: "10m",
     unread: 1,
     online: true,
-    avatarColor: "#38A169",
+    avatarColor: colors.success[500],
     avatarInitials: "CS",
     type: "support",
   },
@@ -62,7 +63,7 @@ const CONVERSATIONS: Conversation[] = [
     time: "1h",
     unread: 0,
     online: true,
-    avatarColor: "#E53E3E",
+    avatarColor: colors.danger[600],
     avatarInitials: "ST",
     type: "safety",
   },
@@ -74,7 +75,7 @@ const CONVERSATIONS: Conversation[] = [
     time: "Yesterday",
     unread: 0,
     online: false,
-    avatarColor: "#475A99",
+    avatarColor: colors.primary[700],
     avatarInitials: "JK",
     type: "driver",
   },
@@ -86,7 +87,7 @@ const CONVERSATIONS: Conversation[] = [
     time: "2d",
     unread: 0,
     online: false,
-    avatarColor: "#EAB308",
+    avatarColor: colors.warning[500],
     avatarInitials: "CR",
     type: "promo",
   },
@@ -98,7 +99,7 @@ const CONVERSATIONS: Conversation[] = [
     time: "3d",
     unread: 0,
     online: false,
-    avatarColor: "#364573",
+    avatarColor: colors.primary[800],
     avatarInitials: "AM",
     type: "driver",
   },
@@ -141,36 +142,21 @@ const Avatar = ({
       }}
     >
       <Text
-        style={{
-          color: "#fff",
-          fontFamily: "Jakarta-Bold",
-          fontSize: size * 0.33,
-        }}
+        className="text-white font-JakartaBold"
+        style={{ fontSize: size * 0.33 }}
       >
         {initials}
       </Text>
     </View>
     {online && (
-      <View
-        style={{
-          position: "absolute",
-          bottom: 1,
-          right: 1,
-          width: 12,
-          height: 12,
-          borderRadius: 6,
-          backgroundColor: "#0CC25F",
-          borderWidth: 2,
-          borderColor: "#fff",
-        }}
-      />
+      <View className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full bg-general-400 border-2 border-white" />
     )}
   </View>
 );
 
 const PinnedBadge = () => (
   <View className="flex-row items-center gap-0.5 mb-0.5">
-    <Ionicons name="pin" size={10} color="#94A3B8" />
+    <Ionicons name="pin" size={10} color={colors.secondary[500]} />
     <Text className="text-[10px] font-JakartaMedium text-secondary-500">
       Pinned
     </Text>
@@ -277,7 +263,7 @@ const FilterChip = ({
 const EmptyState = () => (
   <View className="flex-1 items-center justify-center py-24">
     <View className="h-16 w-16 rounded-full bg-general-300 items-center justify-center">
-      <Ionicons name="chatbubbles-outline" size={30} color="#ADADAD" />
+      <Ionicons name="chatbubbles-outline" size={30} color={colors.general[800]} />
     </View>
     <Text className="mt-4 text-base font-JakartaSemiBold text-secondary-800">
       No conversations found
@@ -327,24 +313,24 @@ const Chat = () => {
             )}
           </View>
           <TouchableOpacity className="h-10 w-10 rounded-full bg-general-300 items-center justify-center">
-            <Ionicons name="create-outline" size={19} color="#333333" />
+            <Ionicons name="create-outline" size={19} color={colors.secondary[900]} />
           </TouchableOpacity>
         </View>
 
         {/* Search bar */}
         <View className="mt-4 flex-row items-center bg-general-500 rounded-2xl px-4 py-3 gap-2">
-          <Ionicons name="search-outline" size={18} color="#ADADAD" />
+          <Ionicons name="search-outline" size={18} color={colors.general[800]} />
           <TextInput
             value={query}
             onChangeText={setQuery}
             placeholder="Search conversations…"
-            placeholderTextColor="#ADADAD"
+            placeholderTextColor={colors.general[800]}
             className="flex-1 text-sm font-JakartaMedium text-secondary-800"
             returnKeyType="search"
           />
           {query.length > 0 && (
             <TouchableOpacity onPress={() => setQuery("")}>
-              <Ionicons name="close-circle" size={18} color="#ADADAD" />
+              <Ionicons name="close-circle" size={18} color={colors.general[800]} />
             </TouchableOpacity>
           )}
         </View>
@@ -368,7 +354,7 @@ const Chat = () => {
         className="mx-5 mt-4 rounded-2xl bg-primary-500 p-4 flex-row items-center"
       >
         <View className="h-10 w-10 rounded-full bg-white/20 items-center justify-center">
-          <Ionicons name="car" size={20} color="#fff" />
+          <Ionicons name="car" size={20} color={colors.white} />
         </View>
         <View className="ml-3 flex-1">
           <Text className="text-white font-JakartaBold text-sm">
@@ -381,7 +367,7 @@ const Chat = () => {
         <Ionicons
           name="chevron-forward"
           size={18}
-          color="rgba(255,255,255,0.7)"
+          color={colors.whiteMuted}
         />
       </TouchableOpacity>
 
@@ -406,14 +392,14 @@ const Chat = () => {
         onPress={() => router.push("/(root)/help" as any)}
         className="absolute bottom-8 right-5 h-14 w-14 rounded-full bg-secondary-900 items-center justify-center shadow-lg"
         style={{
-          shadowColor: "#333333",
+          shadowColor: colors.secondary[900],
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.25,
           shadowRadius: 8,
           elevation: 8,
         }}
       >
-        <Ionicons name="headset-outline" size={24} color="#fff" />
+        <Ionicons name="headset-outline" size={24} color={colors.white} />
       </TouchableOpacity>
     </SafeAreaView>
   );

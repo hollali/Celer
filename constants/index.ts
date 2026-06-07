@@ -98,3 +98,5 @@ export const onboarding = [
 export const data = {
 	onboarding,
 };
+
+export { colors } from "./colors";
