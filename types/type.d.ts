@@ -34,6 +34,7 @@ declare interface MapProps {
 }
 
 declare interface Ride {
+	ride_id: number;
 	origin_address: string;
 	destination_address: string;
 	origin_latitude: number;
@@ -63,7 +64,7 @@ declare interface ButtonProps extends TouchableOpacityProps {
 }
 
 declare interface GoogleInputProps {
-	icon?: string;
+	icon?: any;
 	initialLocation?: string;
 	containerStyle?: string;
 	textInputBackgroundColor?: string;

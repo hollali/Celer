@@ -1,47 +1,163 @@
+import { useUser } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
-import { ScrollView, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
+import * as WebBrowser from "expo-web-browser";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-type PaymentMethod = {
-  id: string;
-  label: string;
-  expiry: string;
-  brand: "card" | "wallet";
-};
-
-const initialMethods: PaymentMethod[] = [
-  { id: "pm-1", label: "Visa •••• 1234", expiry: "08/28", brand: "card" },
-  { id: "pm-2", label: "Mastercard •••• 4521", expiry: "03/27", brand: "card" },
-  { id: "pm-3", label: "Celer Wallet", expiry: "Balance: GH₵48.20", brand: "wallet" },
-];
+import CustomButton from "@/components/customButton";
+import { icons } from "@/constants";
+import { fetchAPI, useFetch } from "@/lib/fetch";
+import { formatTime } from "@/lib/utils";
+import { Ride } from "@/types/type";
 
 const Payment = () => {
-  const [methods, setMethods] = useState(initialMethods);
-  const [defaultMethod, setDefaultMethod] = useState("pm-1");
-  const [autopay, setAutopay] = useState(true);
-  const [saveReceipts, setSaveReceipts] = useState(true);
-  const [promoCode, setPromoCode] = useState("");
-  const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
+  const { user } = useUser();
+  const { rideData } = useLocalSearchParams<{ rideData?: string }>();
+  const email = user?.primaryEmailAddress?.emailAddress;
 
-  const addMethod = () => {
-    const count = methods.length + 1;
-    setMethods((prev) => [
-      ...prev,
-      {
-        id: `pm-${count}`,
-        label: `Visa •••• ${1200 + count}`,
-        expiry: "11/29",
-        brand: "card",
-      },
-    ]);
+  const { data: rides } = useFetch<Ride[]>(`/(api)/ride?user_email=${email}`);
+
+  const [ride, setRide] = useState<Ride | null>(null);
+  const [processing, setProcessing] = useState(false);
+
+  useEffect(() => {
+    if (rideData) {
+      try {
+        setRide(JSON.parse(decodeURIComponent(rideData)));
+      } catch {
+        // fall back to fetching from list
+      }
+    }
+  }, [rideData]);
+
+  const pendingRides = useMemo(
+    () => (rides || []).filter((r) => r.payment_status === "pending"),
+    [rides]
+  );
+
+  const selectedRide = ride || pendingRides[0] || null;
+
+  const handlePayWithPaystack = async () => {
+    if (!user?.primaryEmailAddress?.emailAddress) {
+      Alert.alert("Error", "You must be signed in to pay");
+      return;
+    }
+    if (!selectedRide) {
+      Alert.alert("Error", "No ride selected for payment");
+      return;
+    }
+
+    setProcessing(true);
+
+    try {
+      const initResult = await fetchAPI("/(api)/paystack", {
+        method: "POST",
+        body: JSON.stringify({
+          action: "initialize",
+          amount: Number(selectedRide.fare_price),
+          email: user.primaryEmailAddress.emailAddress,
+          rideData: { ride_id: selectedRide.ride_id },
+        }),
+      });
+
+      if (!initResult.authorization_url) {
+        Alert.alert("Error", initResult.error || "Failed to initialize payment");
+        setProcessing(false);
+        return;
+      }
+
+      const result = await WebBrowser.openAuthSessionAsync(
+        initResult.authorization_url,
+        "celer://payment/callback"
+      );
+
+      if (result.type === "success") {
+        const url = new URL(result.url);
+        const reference =
+          url.searchParams.get("reference") || initResult.reference;
+
+        const verifyResult = await fetchAPI("/(api)/paystack", {
+          method: "POST",
+          body: JSON.stringify({ action: "verify", reference }),
+        });
+
+        if (verifyResult.verified) {
+          await markAsPaid(selectedRide.ride_id);
+          Alert.alert("Payment successful", "Thank you for your payment!", [
+            {
+              text: "OK",
+              onPress: () => router.replace("/(root)/(tabs)/rides"),
+            },
+          ]);
+        } else {
+          Alert.alert(
+            "Payment failed",
+            verifyResult.error || "Could not verify payment"
+          );
+        }
+      } else {
+        Alert.alert("Payment cancelled", "You cancelled the payment");
+      }
+    } catch (error) {
+      console.error("Payment error:", error);
+      Alert.alert("Error", "Something went wrong. Please try again.");
+    } finally {
+      setProcessing(false);
+    }
   };
 
-  const estimatedNextRide = useMemo(() => {
-    if (appliedPromo) return "GH₵16.90";
-    return "GH₵21.00";
-  }, [appliedPromo]);
+  const markAsPaid = async (rideId: number) => {
+    try {
+      await fetchAPI("/(api)/ride", {
+        method: "PATCH",
+        body: JSON.stringify({
+          ride_id: rideId,
+          payment_status: "paid",
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to update ride:", error);
+    }
+  };
+
+  if (!selectedRide) {
+    return (
+      <SafeAreaView className="flex-1 bg-slate-50">
+        <View className="flex-row items-center px-5 py-4 bg-white border-b border-slate-100">
+          <TouchableOpacity onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={22} />
+          </TouchableOpacity>
+          <Text className="ml-4 text-lg font-JakartaBold text-slate-900">
+            Pay for Ride
+          </Text>
+        </View>
+        <View className="flex-1 items-center justify-center px-5">
+          <Ionicons name="card-outline" size={48} color="#94a3b8" />
+          <Text className="text-lg font-JakartaMedium text-slate-500 mt-4">
+            No pending payments
+          </Text>
+          <Text className="text-sm font-Jakarta text-slate-400 mt-1 text-center">
+            All your rides have been paid for.
+          </Text>
+          <CustomButton
+            title="Go to Rides"
+            onPress={() => router.replace("/(root)/(tabs)/rides")}
+            className="mt-4 w-40"
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
@@ -49,103 +165,116 @@ const Payment = () => {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={22} />
         </TouchableOpacity>
-        <Text className="ml-4 text-lg font-JakartaBold text-slate-900">Payment</Text>
+        <Text className="ml-4 text-lg font-JakartaBold text-slate-900">
+          Complete Payment
+        </Text>
       </View>
 
       <ScrollView className="px-5" showsVerticalScrollIndicator={false}>
-        <View className="mt-5 rounded-2xl bg-emerald-600 p-4">
-          <Text className="text-white font-JakartaBold">Billing Overview</Text>
-          <Text className="text-emerald-100 mt-1 text-xs">Estimated next ride total</Text>
-          <Text className="text-white text-2xl mt-1 font-JakartaBold">{estimatedNextRide}</Text>
-          {appliedPromo && (
-            <Text className="text-emerald-100 text-xs mt-1">Promo active: {appliedPromo}</Text>
-          )}
-        </View>
-
-        <View className="mt-4 rounded-2xl bg-white border border-slate-100 overflow-hidden">
-          <View className="px-4 py-4 flex-row items-center justify-between">
-            <Text className="font-JakartaMedium text-slate-900">Saved Methods</Text>
-            <TouchableOpacity onPress={addMethod}>
-              <Text className="text-blue-600 font-JakartaMedium">+ Add</Text>
-            </TouchableOpacity>
+        <View className="mt-5 rounded-2xl bg-amber-50 border border-amber-200 p-4">
+          <View className="flex-row items-center">
+            <Ionicons name="information-circle" size={20} color="#d97706" />
+            <Text className="text-sm font-JakartaMedium text-amber-700 ml-2">
+              Pay after your trip — settle up once you arrive
+            </Text>
           </View>
-          {methods.map((method, index) => {
-            const selected = defaultMethod === method.id;
-            return (
-              <View key={method.id}>
-                <TouchableOpacity
-                  onPress={() => setDefaultMethod(method.id)}
-                  className="px-4 py-4 flex-row items-center justify-between"
-                >
-                  <View className="flex-row items-center flex-1">
-                    <View
-                      className={`h-9 w-9 rounded-lg items-center justify-center ${
-                        method.brand === "wallet" ? "bg-violet-100" : "bg-slate-100"
-                      }`}
-                    >
-                      <Ionicons
-                        name={method.brand === "wallet" ? "wallet-outline" : "card-outline"}
-                        size={18}
-                        color={method.brand === "wallet" ? "#6d28d9" : "#334155"}
-                      />
-                    </View>
-                    <View className="ml-3">
-                      <Text className="font-JakartaMedium text-slate-800">{method.label}</Text>
-                      <Text className="text-xs text-slate-500">{method.expiry}</Text>
-                    </View>
-                  </View>
-                  <View
-                    className={`h-5 w-5 rounded-full border-2 items-center justify-center ${
-                      selected ? "border-blue-600" : "border-slate-300"
-                    }`}
-                  >
-                    {selected && <View className="h-2.5 w-2.5 rounded-full bg-blue-600" />}
-                  </View>
-                </TouchableOpacity>
-                {index !== methods.length - 1 && <View className="h-px bg-slate-100" />}
-              </View>
-            );
-          })}
         </View>
 
-        <View className="mt-4 rounded-2xl bg-white border border-slate-100 p-4">
-          <Text className="font-JakartaMedium text-slate-900">Promo code</Text>
-          <View className="mt-3 flex-row">
-            <TextInput
-              value={promoCode}
-              onChangeText={setPromoCode}
-              placeholder="Enter code"
-              autoCapitalize="characters"
-              className="flex-1 border border-slate-200 rounded-l-xl px-3 py-3 bg-slate-50"
-            />
-            <TouchableOpacity
-              onPress={() => setAppliedPromo(promoCode.trim() || null)}
-              className="px-4 rounded-r-xl bg-slate-900 items-center justify-center"
-            >
-              <Text className="text-white font-JakartaMedium">Apply</Text>
-            </TouchableOpacity>
-          </View>
-          {appliedPromo && (
-            <Text className="mt-2 text-emerald-700 text-xs">Applied {appliedPromo} successfully.</Text>
-          )}
-        </View>
+        {/* Ride details */}
+        <View className="mt-4 rounded-2xl bg-white border border-slate-200 p-4">
+          <Text className="text-sm font-JakartaBold text-slate-400 uppercase tracking-wider mb-3">
+            Trip details
+          </Text>
 
-        <View className="mt-4 mb-8 rounded-2xl bg-white border border-slate-100 overflow-hidden">
-          <View className="px-4 py-4 flex-row items-center justify-between">
-            <View className="pr-3 flex-1">
-              <Text className="font-JakartaMedium text-slate-900">Auto-pay rides</Text>
-              <Text className="text-xs text-slate-500">Charge the default method when a ride ends.</Text>
+          <View className="flex-row items-start mb-3">
+            <View className="w-2 h-2 rounded-full bg-primary-500 mt-2" />
+            <View className="ml-3 flex-1">
+              <Text className="text-sm font-JakartaMedium text-slate-500">
+                From
+              </Text>
+              <Text className="text-base font-JakartaSemiBold text-slate-900">
+                {selectedRide.origin_address}
+              </Text>
             </View>
-            <Switch value={autopay} onValueChange={setAutopay} />
           </View>
-          <View className="h-px bg-slate-100" />
-          <View className="px-4 py-4 flex-row items-center justify-between">
-            <View className="pr-3 flex-1">
-              <Text className="font-JakartaMedium text-slate-900">Email receipts</Text>
-              <Text className="text-xs text-slate-500">Send receipt immediately after each payment.</Text>
+
+          <View className="h-6 border-l-2 border-dashed border-slate-300 ml-[3px] mb-3" />
+
+          <View className="flex-row items-start mb-3">
+            <View className="w-2 h-2 rounded-full bg-general-400 mt-2" />
+            <View className="ml-3 flex-1">
+              <Text className="text-sm font-JakartaMedium text-slate-500">To</Text>
+              <Text className="text-base font-JakartaSemiBold text-slate-900">
+                {selectedRide.destination_address}
+              </Text>
             </View>
-            <Switch value={saveReceipts} onValueChange={setSaveReceipts} />
           </View>
+        </View>
+
+        {/* Driver info */}
+        {selectedRide.driver && (
+          <View className="mt-4 rounded-2xl bg-white border border-slate-200 p-4 flex-row items-center">
+            <View className="w-12 h-12 rounded-full bg-primary-100 items-center justify-center">
+              <Ionicons name="person" size={22} color="#0286FF" />
+            </View>
+            <View className="ml-3 flex-1">
+              <Text className="text-base font-JakartaSemiBold text-slate-900">
+                {selectedRide.driver.first_name} {selectedRide.driver.last_name}
+              </Text>
+              <Text className="text-sm font-JakartaMedium text-slate-500">
+                {selectedRide.driver.car_seats} seats
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* Fare summary */}
+        <View className="mt-4 rounded-2xl bg-white border border-slate-200 p-4">
+          <Text className="text-sm font-JakartaBold text-slate-400 uppercase tracking-wider mb-3">
+            Fare summary
+          </Text>
+
+          <View className="flex-row justify-between items-center py-2">
+            <Text className="text-base font-JakartaMedium text-slate-700">
+              Fare
+            </Text>
+            <Text className="text-base font-JakartaSemiBold text-slate-900">
+              ${selectedRide.fare_price}
+            </Text>
+          </View>
+
+          <View className="flex-row justify-between items-center py-2">
+            <Text className="text-base font-JakartaMedium text-slate-700">
+              Duration
+            </Text>
+            <Text className="text-base font-JakartaSemiBold text-slate-900">
+              {formatTime(selectedRide.ride_time)}
+            </Text>
+          </View>
+
+          <View className="h-px bg-slate-100 my-2" />
+
+          <View className="flex-row justify-between items-center py-1">
+            <Text className="text-lg font-JakartaBold text-slate-900">Total</Text>
+            <Text className="text-xl font-JakartaExtraBold text-primary-500">
+              ${selectedRide.fare_price}
+            </Text>
+          </View>
+        </View>
+
+        {/* Pay button */}
+        <View className="mt-6 mb-8">
+          <CustomButton
+            title={processing ? "Processing..." : `Pay $${selectedRide.fare_price} with Paystack`}
+            onPress={handlePayWithPaystack}
+            disabled={processing}
+          />
+          {processing && (
+            <ActivityIndicator size="small" color="#0286FF" className="mt-2" />
+          )}
+          <Text className="text-xs text-slate-400 text-center mt-2">
+            Secure payments powered by Paystack
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
