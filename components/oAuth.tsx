@@ -4,6 +4,7 @@ import { Alert, Image, Text, View } from "react-native";
 import CustomButton from "@/components/customButton";
 import { icons } from "@/constants";
 import { googleOAuth } from "@/lib/auth";
+import { a11y } from "@/lib/accessibility";
 
 const OAuth = () => {
 	const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
@@ -26,10 +27,20 @@ const OAuth = () => {
 
 	return (
 		<View>
-			<View className="flex flex-row justify-center items-center mt-4 gap-x-3">
-				<View className="flex-1 h-[1px] bg-general-100" />
-				<Text className="text-lg">Or</Text>
-				<View className="flex-1 h-[1px] bg-general-100" />
+			<View
+				className="flex flex-row justify-center items-center mt-4 gap-x-3"
+				accessibilityLabel="or sign in with"
+				accessibilityRole="none"
+			>
+				<View
+					className="flex-1 h-[1px] bg-general-100 dark:bg-dark-border"
+					accessibilityRole="none"
+				/>
+				<Text className="text-lg dark:text-dark-text">Or</Text>
+				<View
+					className="flex-1 h-[1px] bg-general-100 dark:bg-dark-border"
+					accessibilityRole="none"
+				/>
 			</View>
 
 			<CustomButton
@@ -40,6 +51,7 @@ const OAuth = () => {
 						source={icons.google}
 						resizeMode="contain"
 						className="w-5 h-5 mx-2"
+						{...a11y("Google logo", "", "image")}
 					/>
 				)}
 				bgVariant="outline"

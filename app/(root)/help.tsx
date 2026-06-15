@@ -3,6 +3,8 @@ import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { a11y, a11yButton, a11yHeader } from "@/lib/accessibility";
+import { useTheme } from "@/lib/ThemeContext";
 
 const faqItems = [
   {
@@ -23,6 +25,7 @@ const faqItems = [
 ];
 
 const Help = () => {
+  const { isDark } = useTheme();
   const [query, setQuery] = useState("");
   const [openFaqId, setOpenFaqId] = useState<string | null>(faqItems[0].id);
 
@@ -37,46 +40,48 @@ const Help = () => {
   }, [query]);
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
-      <View className="flex-row items-center px-5 py-4 bg-white border-b border-slate-100">
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={22} />
+    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-dark-bg">
+      <View className="flex-row items-center px-5 py-4 bg-white dark:bg-dark-card border-b border-slate-100 dark:border-dark-border">
+        <TouchableOpacity onPress={() => router.back()} {...a11yButton("Go back")}>
+          <Ionicons name="chevron-back" size={22} color={isDark ? "#F5F5F7" : "#0F172A"} />
         </TouchableOpacity>
-        <Text className="ml-4 text-lg font-JakartaBold text-slate-900">Help & Support</Text>
+        <Text className="ml-4 text-lg font-JakartaBold text-slate-900 dark:text-dark-text" {...a11yHeader("Help & Support")}>Help & Support</Text>
       </View>
 
       <ScrollView className="px-5" showsVerticalScrollIndicator={false}>
-        <View className="mt-5 rounded-2xl bg-indigo-600 p-4">
+        <View className="mt-5 rounded-2xl bg-indigo-600 dark:bg-indigo-700 p-4">
           <Text className="text-white font-JakartaBold text-base">Need help right away?</Text>
           <Text className="text-indigo-100 text-xs mt-1">
             Average support response time: under 3 minutes
           </Text>
           <View className="mt-4 flex-row gap-2">
-            <TouchableOpacity className="flex-1 bg-white/20 rounded-xl px-3 py-3 flex-row items-center justify-center">
+            <TouchableOpacity className="flex-1 bg-white/20 rounded-xl px-3 py-3 flex-row items-center justify-center" {...a11yButton("Live chat with support")}>
               <Ionicons name="chatbox-ellipses-outline" size={16} color="white" />
               <Text className="text-white ml-2 font-JakartaMedium">Live Chat</Text>
             </TouchableOpacity>
-            <TouchableOpacity className="flex-1 bg-white/20 rounded-xl px-3 py-3 flex-row items-center justify-center">
+            <TouchableOpacity className="flex-1 bg-white/20 rounded-xl px-3 py-3 flex-row items-center justify-center" {...a11yButton("Call support")}>
               <Ionicons name="call-outline" size={16} color="white" />
               <Text className="text-white ml-2 font-JakartaMedium">Call Us</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        <View className="mt-4 rounded-2xl bg-white border border-slate-100 p-4">
-          <Text className="font-JakartaMedium text-slate-800 mb-2">Search FAQs</Text>
-          <View className="flex-row items-center rounded-xl border border-slate-200 bg-slate-50 px-3">
+        <View className="mt-4 rounded-2xl bg-white dark:bg-dark-card border border-slate-100 dark:border-dark-border p-4">
+          <Text className="font-JakartaMedium text-slate-800 dark:text-dark-text mb-2">Search FAQs</Text>
+          <View className="flex-row items-center rounded-xl border border-slate-200 dark:border-dark-border bg-slate-50 dark:bg-dark-bg px-3">
             <Ionicons name="search" size={16} color="#64748b" />
             <TextInput
               placeholder="Type a question"
+              placeholderTextColor="#8E8E93"
               value={query}
               onChangeText={setQuery}
-              className="flex-1 px-2 py-3 text-slate-900"
+              className="flex-1 px-2 py-3 text-slate-900 dark:text-dark-text"
+              accessibilityLabel="Search frequently asked questions"
             />
           </View>
         </View>
 
-        <View className="mt-4 rounded-2xl bg-white border border-slate-100 overflow-hidden">
+        <View className="mt-4 rounded-2xl bg-white dark:bg-dark-card border border-slate-100 dark:border-dark-border overflow-hidden">
           {filteredFaq.map((item, index) => {
             const open = openFaqId === item.id;
             return (
@@ -84,8 +89,9 @@ const Help = () => {
                 <TouchableOpacity
                   onPress={() => setOpenFaqId(open ? null : item.id)}
                   className="px-4 py-4 flex-row items-center justify-between"
+                  {...a11yButton(item.question, open ? "Collapse answer" : "Expand answer")}
                 >
-                  <Text className="font-JakartaMedium text-slate-900 pr-3 flex-1">
+                  <Text className="font-JakartaMedium text-slate-900 dark:text-dark-text pr-3 flex-1">
                     {item.question}
                   </Text>
                   <Ionicons
@@ -96,31 +102,34 @@ const Help = () => {
                 </TouchableOpacity>
                 {open && (
                   <View className="px-4 pb-4">
-                    <Text className="text-slate-600 text-sm leading-5">{item.answer}</Text>
+                    <Text className="text-slate-600 dark:text-dark-text-secondary text-sm leading-5">{item.answer}</Text>
                   </View>
                 )}
-                {index !== filteredFaq.length - 1 && <View className="h-px bg-slate-100" />}
+                {index !== filteredFaq.length - 1 && <View className="h-px bg-slate-100 dark:bg-dark-border" />}
               </View>
             );
           })}
           {!filteredFaq.length && (
             <View className="px-4 py-6 items-center">
-              <Text className="text-slate-500">No FAQ matches your search.</Text>
+              <Text className="text-slate-500 dark:text-dark-text-secondary">No FAQ matches your search.</Text>
             </View>
           )}
         </View>
 
-        <View className="mt-4 rounded-2xl bg-white border border-slate-100 p-4 mb-8">
-          <Text className="font-JakartaMedium text-slate-900">Recent Support Tickets</Text>
-          <View className="mt-3 rounded-xl border border-slate-200 p-3">
-            <Text className="font-JakartaMedium text-slate-800">#5471 • Fare Review</Text>
-            <Text className="text-xs text-amber-600 mt-1">Pending • Updated 2h ago</Text>
+        <View className="mt-4 rounded-2xl bg-white dark:bg-dark-card border border-slate-100 dark:border-dark-border p-4 mb-8">
+          <Text className="font-JakartaMedium text-slate-900 dark:text-dark-text">Recent Support Tickets</Text>
+          <View className="mt-3 rounded-xl border border-slate-200 dark:border-dark-border p-3">
+            <Text className="font-JakartaMedium text-slate-800 dark:text-dark-text">#5471 • Fare Review</Text>
+            <Text className="text-xs text-amber-600 dark:text-amber-400 mt-1">Pending • Updated 2h ago</Text>
           </View>
-          <View className="mt-2 rounded-xl border border-slate-200 p-3">
-            <Text className="font-JakartaMedium text-slate-800">#5458 • Lost Item Report</Text>
-            <Text className="text-xs text-emerald-600 mt-1">Resolved • Yesterday</Text>
+          <View className="mt-2 rounded-xl border border-slate-200 dark:border-dark-border p-3">
+            <Text className="font-JakartaMedium text-slate-800 dark:text-dark-text">#5458 • Lost Item Report</Text>
+            <Text className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">Resolved • Yesterday</Text>
           </View>
-          <TouchableOpacity className="mt-4 rounded-full bg-slate-900 py-3 items-center">
+          <TouchableOpacity
+            className="mt-4 rounded-full bg-slate-900 dark:bg-primary-500 py-3 items-center"
+            {...a11yButton("Create new support ticket")}
+          >
             <Text className="text-white font-JakartaBold">Create New Ticket</Text>
           </TouchableOpacity>
         </View>

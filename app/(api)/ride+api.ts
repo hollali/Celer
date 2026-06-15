@@ -7,8 +7,20 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const userEmail = searchParams.get("user_email");
 
-    let response;
+    let userId: number | null = null;
     if (userEmail) {
+      const userResult = await sql`
+        SELECT id FROM users WHERE email = ${userEmail} LIMIT 1;
+      `;
+      if (userResult.length > 0) {
+        userId = userResult[0].id;
+      } else {
+        return Response.json({ data: [] }, { status: 200 });
+      }
+    }
+
+    let response;
+    if (userId) {
       response = await sql`
         SELECT
           rides.ride_id,
@@ -32,7 +44,7 @@ export async function GET(request: Request) {
         INNER JOIN
           drivers ON rides.driver_id = drivers.id
         WHERE
-          rides.user_id = ${userEmail}
+          rides.user_id = ${userId}
         ORDER BY
           rides.created_at DESC
         LIMIT 20;

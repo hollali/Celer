@@ -3,12 +3,12 @@ import { ActivityIndicator, Text, View } from "react-native";
 import MapView, {
   Marker,
   PROVIDER_DEFAULT,
-  PROVIDER_GOOGLE,
 } from "react-native-maps";
 
 import { calculateDriverTimes, calculateRegion, generateMarkersFromData } from "@/lib/map";
 import { useDriverStore, useLocationStore } from "@/store";
-import { Driver, MarkerData } from "@/types/type";
+import { MarkerData } from "@/types/type";
+import { a11y } from "@/lib/accessibility";
 
 const Map = () => {
   const {
@@ -65,9 +65,13 @@ const Map = () => {
 
   if (!userLatitude || !userLongitude) {
     return (
-      <View className="flex justify-between items-center w-full rounded-2xl h-[300px]">
-        <ActivityIndicator size="small" color="#000" />
-        <Text>Loading map...</Text>
+      <View
+        className="flex justify-between items-center w-full rounded-2xl h-[300px]"
+        accessibilityLabel="Loading map"
+        accessibilityRole="none"
+      >
+        <ActivityIndicator size="small" color="#0286FF" accessibilityLabel="Loading" />
+        <Text className="dark:text-dark-text">Loading map...</Text>
       </View>
     );
   }
@@ -82,6 +86,7 @@ const Map = () => {
       }}
       region={region}
       showsUserLocation={true}
+      accessibilityLabel="Map showing your location and nearby drivers"
     >
       {markers.map((marker) => (
         <Marker
@@ -91,6 +96,7 @@ const Map = () => {
             longitude: marker.longitude,
           }}
           title={marker.title}
+          description={`${marker.rating} stars, $${marker.price}`}
           pinColor={selectedDriver === marker.id ? "#0286FF" : "#AAAAAA"}
         />
       ))}

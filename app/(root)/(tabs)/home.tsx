@@ -24,6 +24,7 @@ import { icons, images } from "@/constants";
 import { fetchAPI } from "@/lib/fetch";
 import { useLocationStore, useDriverStore } from "@/store";
 import { MarkerData } from "@/types/type";
+import { a11y, a11yButton, a11yImage } from "@/lib/accessibility";
 
 const FALLBACK_DRIVERS: MarkerData[] = [
   {
@@ -200,7 +201,7 @@ const Home = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-white dark:bg-dark-bg">
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
@@ -208,18 +209,28 @@ const Home = () => {
       {/* Header */}
       <View className="flex flex-row items-center justify-between px-5 pt-3">
         <View>
-          <Text className="text-lg font-JakartaExtraBold">
+          <Text className="text-lg font-JakartaExtraBold text-black dark:text-dark-text">
             Welcome, {user?.firstName || "Rider"}
           </Text>
-          <Text className="text-sm font-JakartaMedium text-general-200">
+          <Text className="text-sm font-JakartaMedium text-general-200 dark:text-dark-text-secondary">
             Where are you headed today?
           </Text>
         </View>
         <TouchableOpacity
           onPress={() => router.push("/(root)/(tabs)/profile" as any)}
-          className="w-10 h-10 rounded-full bg-general-300 items-center justify-center"
+          className="w-10 h-10 rounded-full bg-general-300 dark:bg-dark-card items-center justify-center overflow-hidden"
+          {...a11yButton("View profile", "Navigate to your account settings")}
         >
-          <Image source={icons.profile} className="w-5 h-5" />
+          {user?.imageUrl ? (
+            <Image
+              source={{ uri: user.imageUrl }}
+              className="w-full h-full"
+              resizeMode="cover"
+              {...a11yImage("Your profile photo")}
+            />
+          ) : (
+            <Image source={icons.profile} className="w-5 h-5" {...a11yImage("Profile placeholder")} />
+          )}
         </TouchableOpacity>
       </View>
 
@@ -230,7 +241,7 @@ const Home = () => {
 
       {/* Bottom sheet — scrollable with padding for the tab bar */}
       <View
-        className="bg-white px-5 pt-5 rounded-t-3xl shadow-lg"
+        className="bg-white dark:bg-dark-card px-5 pt-5 rounded-t-3xl shadow-lg dark:border dark:border-dark-border"
         style={{ maxHeight: 260 }}
       >
         <ScrollView
@@ -244,7 +255,7 @@ const Home = () => {
               <GoogleInput
                 icon={icons.search}
                 initialLocation={useLocationStore.getState().userAddress ?? "Your location"}
-                containerStyle="bg-white"
+                containerStyle="bg-white dark:bg-dark-card"
                 textInputBackgroundColor="#F5F5F5"
                 handlePress={() => {}}
               />
@@ -252,7 +263,7 @@ const Home = () => {
                 <GoogleInput
                   icon={icons.target}
                   initialLocation="Where to?"
-                  containerStyle="bg-white"
+                  containerStyle="bg-white dark:bg-dark-card"
                   textInputBackgroundColor="#F5F5F5"
                   handlePress={handleDestinationPress}
                 />
@@ -261,18 +272,20 @@ const Home = () => {
               {/* Recent rides */}
               {rideHistory.length > 0 && (
                 <View className="mt-5">
-                  <Text className="text-lg font-JakartaBold mb-3">Recent Rides</Text>
+                  <Text className="text-lg font-JakartaBold mb-3 text-black dark:text-dark-text" {...a11y("Recent Rides", "Your recent ride history", "header")}>Recent Rides</Text>
                   <FlatList
                     data={rideHistory}
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     keyExtractor={(item, idx) => idx.toString()}
                     renderItem={({ item }) => (
-                      <TouchableOpacity className="bg-general-500 rounded-xl p-3 mr-3 w-40">
-                        <Text className="font-JakartaSemiBold text-sm" numberOfLines={1}>
+                      <TouchableOpacity className="bg-general-500 dark:bg-dark-card rounded-xl p-3 mr-3 w-40 border border-transparent dark:border-dark-border"
+                        {...a11yButton(`Ride from ${item.origin_address} to ${item.destination_address}`)}
+                      >
+                        <Text className="font-JakartaSemiBold text-sm text-black dark:text-dark-text" numberOfLines={1}>
                           {item.origin_address}
                         </Text>
-                        <Text className="font-Jakarta text-xs text-general-200 mt-1">
+                        <Text className="font-Jakarta text-xs text-general-200 dark:text-dark-text-secondary mt-1">
                           → {item.destination_address}
                         </Text>
                       </TouchableOpacity>
@@ -284,19 +297,19 @@ const Home = () => {
           ) : (
             <>
               {/* Driver selection */}
-              <Text className="text-xl font-JakartaBold mb-3">
+              <Text className="text-xl font-JakartaBold mb-3 text-black dark:text-dark-text" {...a11y("Select a driver", "", "header")}>
                 Select a driver
               </Text>
 
               {loadingDrivers ? (
-                <View className="items-center py-6">
+                <View className="items-center py-6" accessibilityLabel="Loading drivers">
                   <ActivityIndicator size="large" color="#0286FF" />
-                  <Text className="text-base font-JakartaMedium text-general-200 mt-2">
+                  <Text className="text-base font-JakartaMedium text-general-200 dark:text-dark-text-secondary mt-2">
                     Finding nearby drivers...
                   </Text>
                 </View>
               ) : drivers.length > 0 ? (
-                <View>
+                <View accessibilityLabel="Available drivers list" accessibilityRole="none">
                   {drivers.map((driver) => (
                     <View key={driver.id} className="mb-2">
                       <DriverCard
@@ -309,8 +322,8 @@ const Home = () => {
                 </View>
               ) : (
                 <View className="items-center py-6">
-                  <Image source={images.noResult} className="w-20 h-20" />
-                  <Text className="text-base font-JakartaMedium text-general-200 mt-2">
+                  <Image source={images.noResult} className="w-20 h-20" {...a11yImage("No results")} />
+                  <Text className="text-base font-JakartaMedium text-general-200 dark:text-dark-text-secondary mt-2">
                     No drivers available nearby
                   </Text>
                 </View>

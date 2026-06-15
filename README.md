@@ -61,14 +61,18 @@ The app prioritizes a smooth onboarding flow, secure social authentication, and 
 - Serverless PostgreSQL database via Neon DB
 - Expo Router-based navigation with protected routes
 - Clean, modern onboarding, sign-in, and sign-up screens
+- **Dark mode** — Light, Dark, and System appearance modes with persistent theme switching
+- **Accessibility** — WCAG-compliant labels, hints, roles, and states on all interactive elements
+- **Payment options** — Paystack online payments and in-person cash payment selection
+- **In-app chat** — Conversation list with search, filtering, pinned messages, and unread badges
+- **Ride history** — Past rides with status filtering and spend tracking
+- **Profile & settings** — Avatar-based profile with stats, edit profile, safety settings, legal & privacy controls
 
 ### 📋 Upcoming Features
 
 - Real-time ride booking and driver matching
 - Live GPS tracking for active rides
 - Mobile Money integration (MTN MoMo, Vodafone Cash, AirtelTigo)
-- In-app chat between rider and driver
-- Ride history and receipts
 - Driver earnings dashboard
 - Rating and review system
 - Push notifications for ride status updates
@@ -87,8 +91,9 @@ The app prioritizes a smooth onboarding flow, secure social authentication, and 
 | Authentication | Clerk | Social OAuth, session management, user accounts |
 | Database | Neon DB | Serverless PostgreSQL — scalable & cost-efficient |
 | DB Client | @neondatabase/serverless | HTTP-based Postgres driver compatible with React Native |
-| Styling | StyleSheet / NativeWind | Core styles with Tailwind-style utilities |
+| Styling | NativeWind v4 | Tailwind-style utilities with `dark:` variant theming |
 | State | React Context + Hooks | Local and global state management |
+| Payments | Paystack | Online payment processing via Paystack API |
 | More to come | TBD | Tech stack will expand as features are added |
 
 ---
@@ -98,21 +103,54 @@ The app prioritizes a smooth onboarding flow, secure social authentication, and 
 ```
 celer/
 ├── app/                        # Expo Router screens & layouts
+│   ├── (api)/                  # API route handlers
+│   │   ├── ride+api.ts
+│   │   ├── user+api.ts
+│   │   ├── driver+api.ts
+│   │   └── paystack+api.ts
 │   ├── (auth)/                 # Auth group (sign-in, sign-up, OAuth)
 │   │   ├── sign-in.tsx
 │   │   ├── sign-up.tsx
-│   │   └── oauth-callback.tsx
+│   │   └── welcome.tsx
 │   ├── (root)/                 # Protected app screens
-│   │   ├── home.tsx
+│   │   ├── (tabs)/             # Bottom tab screens
+│   │   │   ├── home.tsx
+│   │   │   ├── rides.tsx
+│   │   │   ├── chat.tsx
+│   │   │   ├── profile.tsx
+│   │   │   └── _layout.tsx
+│   │   ├── appearance.tsx      # Theme settings (Light/Dark/System)
+│   │   ├── edit-profile.tsx
+│   │   ├── help.tsx
+│   │   ├── legal.tsx
+│   │   ├── payment.tsx
+│   │   ├── promotions.tsx
+│   │   ├── ride-history.tsx
+│   │   ├── safety.tsx
 │   │   └── _layout.tsx
-│   ├── _layout.tsx             # Root layout with Clerk provider
-│   └── index.tsx               # Entry point / redirect
+│   ├── _layout.tsx             # Root layout with Clerk + Theme providers
+│   ├── global.css              # Tailwind / NativeWind global styles
+│   └── +not-found.tsx
 ├── components/                 # Reusable UI components
-├── lib/                        # Utilities (db client, helpers)
-│   └── db.ts                   # Neon DB client
+│   ├── customButton.tsx
+│   ├── DriverCard.tsx
+│   ├── GoogleInput.tsx
+│   ├── inputField.tsx
+│   ├── Map.tsx
+│   └── oAuth.tsx
+├── lib/                        # Utilities, hooks, helpers
+│   ├── accessibility.ts        # WCAG a11y factory helpers
+│   ├── ThemeContext.tsx         # Light/Dark/System theme provider
+│   ├── fetch.ts                # Fetch API wrapper & useFetch hook
+│   └── db.ts                   # Neon DB client (deprecated — use API routes)
 ├── constants/                  # App-wide constants & theme
+│   ├── index.ts
+│   ├── colors.ts               # Color tokens for imperative use
+│   ├── icons.ts
+│   └── images.ts
 ├── assets/                     # Images, fonts, icons
 ├── .env                        # Environment variables (not committed)
+├── tailwind.config.js          # NativeWind config with custom dark tokens
 ├── app.config.js               # Expo config
 └── package.json
 ```
@@ -264,17 +302,20 @@ Direct database queries from the client are fine for development and prototyping
 | Status | Feature |
 |---|---|
 | ✅ Done | Social OAuth (Google, Facebook, Apple) via Clerk |
-| ✅ Done | Neon DB integration & database client setup |
+| ✅ Done | Neon DB integration & API route handlers |
 | ✅ Done | Expo Router navigation with protected routes |
+| ✅ Done | Dark mode (Light / Dark / System) with persistent theme |
+| ✅ Done | WCAG accessibility labels, hints, roles, and states |
+| ✅ Done | Payment page with Paystack and Cash options |
+| ✅ Done | In-app chat with search, filtering, pinned messages |
+| ✅ Done | Ride history with status filtering and spend tracking |
+| ✅ Done | Profile, edit profile, safety, legal & privacy screens |
+| ✅ Done | Appearance settings page (Light / Dark / System) |
 | 🔄 In Progress | Ride booking UI and core booking flow |
-| 🔄 In Progress | Driver and rider profile screens |
 | 📋 Planned | Real-time ride tracking with maps |
 | 📋 Planned | Mobile Money payments (MTN MoMo, Vodafone, AirtelTigo) |
 | 📋 Planned | Push notifications (Expo Notifications) |
-| 📋 Planned | In-app chat (rider ↔ driver) |
 | 📋 Planned | Admin dashboard |
-| 💡 Exploring | Backend API layer (Node.js / Hono) |
-| 💡 Exploring | WebSockets or Supabase Realtime for live updates |
 
 ---
 

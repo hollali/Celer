@@ -3,8 +3,11 @@ import { router } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView, Switch, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { a11y, a11yButton, a11ySwitch, a11yHeader } from "@/lib/accessibility";
+import { useTheme } from "@/lib/ThemeContext";
 
 const Safety = () => {
+  const { isDark } = useTheme();
   const [shareTrip, setShareTrip] = useState(true);
   const [emergencyAlerts, setEmergencyAlerts] = useState(true);
   const [audioRecording, setAudioRecording] = useState(false);
@@ -17,68 +20,71 @@ const Safety = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
-      <View className="flex-row items-center px-5 py-4 bg-white border-b border-slate-100">
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={22} />
+    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-dark-bg">
+      <View className="flex-row items-center px-5 py-4 bg-white dark:bg-dark-card border-b border-slate-100 dark:border-dark-border">
+        <TouchableOpacity onPress={() => router.back()} {...a11yButton("Go back")}>
+          <Ionicons name="chevron-back" size={22} color={isDark ? "#F5F5F7" : "#0F172A"} />
         </TouchableOpacity>
-        <Text className="ml-4 text-lg font-JakartaBold text-slate-900">Safety Settings</Text>
+        <Text className="ml-4 text-lg font-JakartaBold text-slate-900 dark:text-dark-text" {...a11yHeader("Safety Settings")}>Safety Settings</Text>
       </View>
 
       <ScrollView className="px-5" showsVerticalScrollIndicator={false}>
-        <View className="mt-5 rounded-2xl bg-red-600 p-4">
+        <View className="mt-5 rounded-2xl bg-red-600 dark:bg-red-700 p-4">
           <Text className="text-white font-JakartaBold">Safety Toolkit Ready</Text>
           <Text className="text-red-100 text-xs mt-1">
             Share location, trigger alerts, and contact emergency services quickly.
           </Text>
-          <TouchableOpacity className="mt-4 rounded-full bg-white py-3 items-center">
+          <TouchableOpacity
+            className="mt-4 rounded-full bg-white py-3 items-center"
+            {...a11yButton("Emergency SOS", "Contact emergency services immediately")}
+          >
             <Text className="text-red-600 font-JakartaBold">Emergency SOS</Text>
           </TouchableOpacity>
         </View>
 
-        <View className="mt-4 rounded-2xl border border-slate-100 bg-white overflow-hidden">
+        <View className="mt-4 rounded-2xl border border-slate-100 dark:border-dark-border bg-white dark:bg-dark-card overflow-hidden">
           <View className="flex-row items-center justify-between px-4 py-4">
             <View className="pr-3 flex-1">
-              <Text className="font-JakartaMedium text-slate-900">Share Trip Status</Text>
-              <Text className="text-xs text-slate-500">Let trusted contacts track your ride live.</Text>
+              <Text className="font-JakartaMedium text-slate-900 dark:text-dark-text">Share Trip Status</Text>
+              <Text className="text-xs text-slate-500 dark:text-dark-text-secondary">Let trusted contacts track your ride live.</Text>
             </View>
-            <Switch value={shareTrip} onValueChange={setShareTrip} />
+            <Switch value={shareTrip} onValueChange={setShareTrip} {...a11ySwitch("Share trip status", shareTrip)} />
           </View>
-          <View className="h-px bg-slate-100" />
+          <View className="h-px bg-slate-100 dark:bg-dark-border" />
           <View className="flex-row items-center justify-between px-4 py-4">
             <View className="pr-3 flex-1">
-              <Text className="font-JakartaMedium text-slate-900">Emergency Alerts</Text>
-              <Text className="text-xs text-slate-500">Notify contacts automatically if SOS is pressed.</Text>
+              <Text className="font-JakartaMedium text-slate-900 dark:text-dark-text">Emergency Alerts</Text>
+              <Text className="text-xs text-slate-500 dark:text-dark-text-secondary">Notify contacts automatically if SOS is pressed.</Text>
             </View>
-            <Switch value={emergencyAlerts} onValueChange={setEmergencyAlerts} />
+            <Switch value={emergencyAlerts} onValueChange={setEmergencyAlerts} {...a11ySwitch("Emergency alerts", emergencyAlerts)} />
           </View>
-          <View className="h-px bg-slate-100" />
+          <View className="h-px bg-slate-100 dark:bg-dark-border" />
           <View className="flex-row items-center justify-between px-4 py-4">
             <View className="pr-3 flex-1">
-              <Text className="font-JakartaMedium text-slate-900">Record ride audio</Text>
-              <Text className="text-xs text-slate-500">Store encrypted clips for safety reports.</Text>
+              <Text className="font-JakartaMedium text-slate-900 dark:text-dark-text">Record ride audio</Text>
+              <Text className="text-xs text-slate-500 dark:text-dark-text-secondary">Store encrypted clips for safety reports.</Text>
             </View>
-            <Switch value={audioRecording} onValueChange={setAudioRecording} />
+            <Switch value={audioRecording} onValueChange={setAudioRecording} {...a11ySwitch("Record ride audio", audioRecording)} />
           </View>
         </View>
 
-        <View className="mt-4 rounded-2xl border border-slate-100 bg-white p-4">
+        <View className="mt-4 rounded-2xl border border-slate-100 dark:border-dark-border bg-white dark:bg-dark-card p-4">
           <View className="flex-row items-center justify-between">
-            <Text className="font-JakartaMedium text-slate-900">Trusted Contacts</Text>
-            <TouchableOpacity onPress={addContact}>
-              <Text className="text-blue-600 font-JakartaMedium">+ Add</Text>
+            <Text className="font-JakartaMedium text-slate-900 dark:text-dark-text">Trusted Contacts</Text>
+            <TouchableOpacity onPress={addContact} {...a11yButton("Add trusted contact")}>
+              <Text className="text-blue-600 dark:text-blue-400 font-JakartaMedium">+ Add</Text>
             </TouchableOpacity>
           </View>
           <View className="mt-3 gap-2">
             {contacts.map((contact) => (
-              <View key={contact} className="rounded-xl border border-slate-200 px-3 py-3 flex-row items-center justify-between">
+              <View key={contact} className="rounded-xl border border-slate-200 dark:border-dark-border px-3 py-3 flex-row items-center justify-between">
                 <View className="flex-row items-center">
-                  <View className="h-8 w-8 rounded-full bg-slate-100 items-center justify-center">
-                    <Ionicons name="person-outline" size={16} color="#334155" />
+                  <View className="h-8 w-8 rounded-full bg-slate-100 dark:bg-dark-bg items-center justify-center">
+                    <Ionicons name="person-outline" size={16} color={isDark ? "#F5F5F7" : "#334155"} />
                   </View>
-                  <Text className="ml-2 text-slate-800 font-JakartaMedium">{contact}</Text>
+                  <Text className="ml-2 text-slate-800 dark:text-dark-text font-JakartaMedium">{contact}</Text>
                 </View>
-                <TouchableOpacity onPress={() => setContacts((prev) => prev.filter((item) => item !== contact))}>
+                <TouchableOpacity onPress={() => setContacts((prev) => prev.filter((item) => item !== contact))} {...a11yButton(`Remove ${contact}`)}>
                   <Ionicons name="close-circle" size={20} color="#94a3b8" />
                 </TouchableOpacity>
               </View>
@@ -86,10 +92,10 @@ const Safety = () => {
           </View>
         </View>
 
-        <View className="mt-4 mb-8 rounded-2xl border border-slate-100 bg-white p-4">
-          <Text className="font-JakartaMedium text-slate-900">Ride check-in reminder</Text>
-          <Text className="text-xs text-slate-500 mt-1">Send a prompt while on trip to confirm you're okay.</Text>
-          <View className="mt-3 flex-row gap-2">
+        <View className="mt-4 mb-8 rounded-2xl border border-slate-100 dark:border-dark-border bg-white dark:bg-dark-card p-4">
+          <Text className="font-JakartaMedium text-slate-900 dark:text-dark-text">Ride check-in reminder</Text>
+          <Text className="text-xs text-slate-500 dark:text-dark-text-secondary mt-1">Send a prompt while on trip to confirm you're okay.</Text>
+          <View className="mt-3 flex-row gap-2" accessibilityLabel="Check-in reminder interval" accessibilityRole="none">
             {(["Off", "5 min", "10 min"] as const).map((option) => {
               const active = checkIn === option;
               return (
@@ -97,10 +103,11 @@ const Safety = () => {
                   key={option}
                   onPress={() => setCheckIn(option)}
                   className={`px-4 py-2 rounded-full border ${
-                    active ? "bg-slate-900 border-slate-900" : "bg-white border-slate-200"
+                    active ? "bg-slate-900 dark:bg-primary-500 border-slate-900 dark:border-primary-500" : "bg-white dark:bg-dark-bg border-slate-200 dark:border-dark-border"
                   }`}
+                  {...a11yButton(option, `Set check-in to ${option}`, false, active)}
                 >
-                  <Text className={`${active ? "text-white" : "text-slate-700"} font-JakartaMedium`}>
+                  <Text className={`${active ? "text-white" : "text-slate-700 dark:text-dark-text-secondary"} font-JakartaMedium`}>
                     {option}
                   </Text>
                 </TouchableOpacity>
@@ -108,9 +115,12 @@ const Safety = () => {
             })}
           </View>
 
-          <TouchableOpacity className="mt-4 rounded-xl bg-slate-100 py-3 flex-row items-center justify-center">
-            <Ionicons name="shield-checkmark-outline" size={16} color="#334155" />
-            <Text className="ml-2 text-slate-700 font-JakartaMedium">Run safety self-check</Text>
+          <TouchableOpacity
+            className="mt-4 rounded-xl bg-slate-100 dark:bg-dark-card py-3 flex-row items-center justify-center"
+            {...a11yButton("Run safety self-check")}
+          >
+            <Ionicons name="shield-checkmark-outline" size={16} color={isDark ? "#F5F5F7" : "#334155"} />
+            <Text className="ml-2 text-slate-700 dark:text-dark-text font-JakartaMedium">Run safety self-check</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

@@ -8,6 +8,7 @@ import { Link, router } from "expo-router";
 import React, { useState } from "react";
 import { Alert, Image, ScrollView, Text, View } from "react-native";
 import ReactNativeModal from "react-native-modal";
+import { a11yLink, a11yImage } from "@/lib/accessibility";
 
 const SignUp = () => {
 	const { isLoaded, signUp, setActive } = useSignUp();
@@ -105,11 +106,11 @@ const SignUp = () => {
 		}
 	};
 	return (
-		<ScrollView className="flex-1 bg-white">
-			<View className="flex-1 bg-white">
+		<ScrollView className="flex-1 bg-white dark:bg-dark-bg">
+			<View className="flex-1 bg-white dark:bg-dark-bg">
 				<View className="relative w-full h-[250px]">
-					<Image source={images.signUpCar} className="z-0 w-full h-[250px]" />
-					<Text className="text-2xl text-black font-JakartaSemiBold absolute bottom-5 left-5">
+					<Image source={images.signUpCar} className="z-0 w-full h-[250px]" {...a11yImage("Create account illustration")} />
+					<Text className="text-2xl text-black dark:text-dark-text font-JakartaSemiBold absolute bottom-5 left-5">
 						Create Your Account
 					</Text>
 				</View>
@@ -144,8 +145,9 @@ const SignUp = () => {
 					<OAuth />
 					<Link
 						href="/sign-in"
-						className="text-lg text-center text-general-200 mt-10">
-						<Text>Already have an account? </Text>
+						className="text-lg text-center text-general-200 dark:text-dark-text-secondary mt-10"
+						{...a11yLink("Sign in", "Navigate to sign in page")}>
+						<Text className="dark:text-dark-text-secondary">Already have an account? </Text>
 						<Text className="text-primary-500">Log In</Text>
 					</Link>
 				</View>
@@ -155,11 +157,11 @@ const SignUp = () => {
 						setShowSuccessModal(true);
 					}
 				}}>
-					<View className="bg-white px-7 py-9 rounded-2xl min-h-[300px]">
-						<Text className="text-2xl font-JakartaExtraBold mb-2">
+					<View className="bg-white dark:bg-dark-card px-7 py-9 rounded-2xl min-h-[300px]">
+						<Text className="text-2xl font-JakartaExtraBold mb-2 text-black dark:text-dark-text">
 							Verification
 						</Text>
-						<Text className="font-Jakarta mb-5">
+						<Text className="font-Jakarta mb-5 text-black dark:text-dark-text-secondary">
 							We've sent a verification code to {form.email}
 						</Text>
 						<InputField
@@ -183,12 +185,12 @@ const SignUp = () => {
 					</View>
 				</ReactNativeModal>
 				<ReactNativeModal isVisible={showSuccessModal}>
-					<View className="bg-white px-7 py-9 rounded-2xl min-h-[300px]">
-						<Image source={images.check} className="w-[110px] h-[110px] mx-auto my-5"/>
-						<Text className="text-3xl font-JakartaBold text-center">
+					<View className="bg-white dark:bg-dark-card px-7 py-9 rounded-2xl min-h-[300px]">
+						<Image source={images.check} className="w-[110px] h-[110px] mx-auto my-5" {...a11yImage("Verified checkmark")} />
+						<Text className="text-3xl font-JakartaBold text-center text-black dark:text-dark-text">
 							Verified
 						</Text>
-						<Text className="text-base text-gray-400 font-Jakarta text-center mt-2">
+						<Text className="text-base text-gray-400 dark:text-dark-text-secondary font-Jakarta text-center mt-2">
 							Your account has been successfully verified.
 						</Text>
 						<CustomButton title="continue"

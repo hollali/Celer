@@ -10,6 +10,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { a11y, a11yButton, a11ySwitch, a11yHeader } from "@/lib/accessibility";
+import { useTheme } from "@/lib/ThemeContext";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -130,7 +132,7 @@ const Avatar = ({
   online: boolean;
   size?: number;
 }) => (
-  <View style={{ width: size, height: size }}>
+  <View style={{ width: size, height: size }} {...a11y(`${initials}${online ? ", online" : ""}`, "", "image")}>
     <View
       style={{
         width: size,
@@ -149,7 +151,7 @@ const Avatar = ({
       </Text>
     </View>
     {online && (
-      <View className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full bg-general-400 border-2 border-white" />
+      <View className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full bg-general-400 border-2 border-white dark:border-dark-card" />
     )}
   </View>
 );
@@ -171,6 +173,10 @@ const ConversationCard = ({ item }: { item: Conversation }) => {
     <TouchableOpacity
       activeOpacity={0.75}
       className="flex-row items-center px-5 py-4"
+      {...a11yButton(
+        `${item.name}, ${item.role}${hasUnread ? `, ${item.unread} unread messages` : ""}`,
+        "Open conversation"
+      )}
     >
       {/* Avatar */}
       <Avatar
@@ -184,39 +190,39 @@ const ConversationCard = ({ item }: { item: Conversation }) => {
         {item.pinned && <PinnedBadge />}
         <View className="flex-row items-center justify-between">
           <Text
-            className={`text-base ${hasUnread ? "font-JakartaBold" : "font-JakartaMedium"} text-secondary-900`}
+            className={`text-base ${hasUnread ? "font-JakartaBold" : "font-JakartaMedium"} text-secondary-900 dark:text-dark-text`}
             numberOfLines={1}
           >
             {item.name}
           </Text>
           <Text
-            className={`text-xs ml-2 ${hasUnread ? "font-JakartaBold text-primary-500" : "font-Jakarta text-secondary-500"}`}
+            className={`text-xs ml-2 ${hasUnread ? "font-JakartaBold text-primary-500" : "font-Jakarta text-secondary-500 dark:text-dark-text-secondary"}`}
           >
             {item.time}
           </Text>
         </View>
 
         <View className="flex-row items-center gap-1.5 mt-0.5">
-          <View className={`rounded-full px-1.5 py-0.5 ${badge.bg}`}>
-            <Text className={`text-[9px] font-JakartaBold ${badge.text}`}>
+          <View className={`rounded-full px-1.5 py-0.5 ${badge.bg} dark:opacity-80`}>
+            <Text className={`text-[9px] font-JakartaBold ${badge.text} dark:text-dark-text`}>
               {badge.label}
             </Text>
           </View>
-          <Text className="text-xs font-JakartaMedium text-secondary-500 flex-1">
+          <Text className="text-xs font-JakartaMedium text-secondary-500 dark:text-dark-text-secondary flex-1">
             {item.role}
           </Text>
         </View>
 
         <View className="flex-row items-center justify-between mt-1">
           <Text
-            className={`text-sm flex-1 mr-2 ${hasUnread ? "font-JakartaMedium text-secondary-800" : "font-Jakarta text-secondary-500"}`}
+            className={`text-sm flex-1 mr-2 ${hasUnread ? "font-JakartaMedium text-secondary-800 dark:text-dark-text" : "font-Jakarta text-secondary-500 dark:text-dark-text-secondary"}`}
             numberOfLines={1}
           >
             {item.lastMessage}
           </Text>
           {hasUnread && (
             <View className="h-5 min-w-5 rounded-full bg-primary-500 items-center justify-center px-1">
-              <Text className="text-[10px] font-JakartaBold text-white">
+              <Text className="text-[10px] font-JakartaBold text-white" accessibilityLabel={`${item.unread} unread`}>
                 {item.unread}
               </Text>
             </View>
@@ -227,7 +233,7 @@ const ConversationCard = ({ item }: { item: Conversation }) => {
   );
 };
 
-const Divider = () => <View className="h-px bg-general-300 mx-5" />;
+const Divider = () => <View className="h-px bg-general-300 dark:bg-dark-border mx-5" accessibilityRole="none" />;
 
 // ─── Filter Chip ──────────────────────────────────────────────────────────────
 
@@ -247,11 +253,12 @@ const FilterChip = ({
     onPress={onPress}
     activeOpacity={0.7}
     className={`mr-2 rounded-full px-4 py-1.5 border ${
-      active ? "bg-secondary-900 border-secondary-900" : "bg-white border-secondary-300"
+      active ? "bg-secondary-900 dark:bg-primary-500 border-secondary-900 dark:border-primary-500" : "bg-white dark:bg-dark-card border-secondary-300 dark:border-dark-border"
     }`}
+    {...a11yButton(label, `Filter by ${label}`, false, active)}
   >
     <Text
-      className={`text-sm font-JakartaMedium ${active ? "text-white" : "text-secondary-700"}`}
+      className={`text-sm font-JakartaMedium ${active ? "text-white" : "text-secondary-700 dark:text-dark-text-secondary"}`}
     >
       {label}
     </Text>
@@ -261,14 +268,14 @@ const FilterChip = ({
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
 const EmptyState = () => (
-  <View className="flex-1 items-center justify-center py-24">
-    <View className="h-16 w-16 rounded-full bg-general-300 items-center justify-center">
+  <View className="flex-1 items-center justify-center py-24" accessibilityLabel="No conversations found">
+    <View className="h-16 w-16 rounded-full bg-general-300 dark:bg-dark-card items-center justify-center">
       <Ionicons name="chatbubbles-outline" size={30} color={colors.general[800]} />
     </View>
-    <Text className="mt-4 text-base font-JakartaSemiBold text-secondary-800">
+    <Text className="mt-4 text-base font-JakartaSemiBold text-secondary-800 dark:text-dark-text">
       No conversations found
     </Text>
-    <Text className="mt-1 text-sm font-Jakarta text-secondary-500 text-center px-8">
+    <Text className="mt-1 text-sm font-Jakarta text-secondary-500 dark:text-dark-text-secondary text-center px-8">
       Start a ride to chat with your driver or contact support.
     </Text>
   </View>
@@ -277,6 +284,7 @@ const EmptyState = () => (
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 const Chat = () => {
+  const { isDark } = useTheme();
   const [query, setQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<Filter>("All");
 
@@ -298,45 +306,49 @@ const Chat = () => {
   });
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-white dark:bg-dark-bg">
       {/* ── Header ── */}
-      <View className="px-5 pt-2 pb-4 bg-white border-b border-general-300">
+      <View className="px-5 pt-2 pb-4 bg-white dark:bg-dark-bg border-b border-general-300 dark:border-dark-border">
         <View className="flex-row items-center justify-between">
           <View>
-            <Text className="text-2xl font-JakartaBold text-secondary-900">
+            <Text className="text-2xl font-JakartaBold text-secondary-900 dark:text-dark-text" {...a11yHeader("Messages")}>
               Messages
             </Text>
             {totalUnread > 0 && (
-              <Text className="text-xs font-JakartaMedium text-secondary-500 mt-0.5">
+              <Text className="text-xs font-JakartaMedium text-secondary-500 dark:text-dark-text-secondary mt-0.5" accessibilityLabel={`${totalUnread} unread messages`}>
                 {totalUnread} unread message{totalUnread > 1 ? "s" : ""}
               </Text>
             )}
           </View>
-          <TouchableOpacity className="h-10 w-10 rounded-full bg-general-300 items-center justify-center">
-            <Ionicons name="create-outline" size={19} color={colors.secondary[900]} />
+          <TouchableOpacity
+            className="h-10 w-10 rounded-full bg-general-300 dark:bg-dark-card items-center justify-center"
+            {...a11yButton("New message", "Compose a new message")}
+          >
+            <Ionicons name="create-outline" size={19} color={isDark ? "#F5F5F7" : colors.secondary[900]} />
           </TouchableOpacity>
         </View>
 
         {/* Search bar */}
-        <View className="mt-4 flex-row items-center bg-general-500 rounded-2xl px-4 py-3 gap-2">
+        <View className="mt-4 flex-row items-center bg-general-500 dark:bg-dark-card rounded-2xl px-4 py-3 gap-2">
           <Ionicons name="search-outline" size={18} color={colors.general[800]} />
           <TextInput
             value={query}
             onChangeText={setQuery}
             placeholder="Search conversations…"
             placeholderTextColor={colors.general[800]}
-            className="flex-1 text-sm font-JakartaMedium text-secondary-800"
+            className="flex-1 text-sm font-JakartaMedium text-secondary-800 dark:text-dark-text"
+            accessibilityLabel="Search conversations"
             returnKeyType="search"
           />
           {query.length > 0 && (
-            <TouchableOpacity onPress={() => setQuery("")}>
+            <TouchableOpacity onPress={() => setQuery("")} {...a11yButton("Clear search")}>
               <Ionicons name="close-circle" size={18} color={colors.general[800]} />
             </TouchableOpacity>
           )}
         </View>
 
         {/* Filter chips */}
-        <View className="flex-row mt-3">
+        <View className="flex-row mt-3" accessibilityLabel="Filter conversations" accessibilityRole="none">
           {FILTERS.map((f) => (
             <FilterChip
               key={f}
@@ -352,6 +364,7 @@ const Chat = () => {
       <TouchableOpacity
         activeOpacity={0.85}
         className="mx-5 mt-4 rounded-2xl bg-primary-500 p-4 flex-row items-center"
+        {...a11yButton("Active ride with Marcus T.", "Open live trip chat")}
       >
         <View className="h-10 w-10 rounded-full bg-white/20 items-center justify-center">
           <Ionicons name="car" size={20} color={colors.white} />
@@ -390,7 +403,7 @@ const Chat = () => {
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={() => router.push("/(root)/help" as any)}
-        className="absolute bottom-8 right-5 h-14 w-14 rounded-full bg-secondary-900 items-center justify-center shadow-lg"
+        className="absolute bottom-8 right-5 h-14 w-14 rounded-full bg-secondary-900 dark:bg-primary-500 items-center justify-center shadow-lg"
         style={{
           shadowColor: colors.secondary[900],
           shadowOffset: { width: 0, height: 4 },
@@ -398,6 +411,7 @@ const Chat = () => {
           shadowRadius: 8,
           elevation: 8,
         }}
+        {...a11yButton("Help and support", "Get assistance")}
       >
         <Ionicons name="headset-outline" size={24} color={colors.white} />
       </TouchableOpacity>

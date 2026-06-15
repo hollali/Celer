@@ -1,13 +1,7 @@
 import { icons } from "@/constants";
 import { Tabs } from "expo-router";
 import { Image, ImageSourcePropType, View } from "react-native";
-
-// Color constants
-const COLORS = {
-  tabBarBg: "#333333",
-  focusedIcon: "#ffffff",
-  inactiveIcon: "#9ca3af",
-};
+import { useTheme } from "@/lib/ThemeContext";
 
 const TabIcon = ({
   source,
@@ -23,7 +17,7 @@ const TabIcon = ({
   >
     <Image
       source={source}
-      tintColor={focused ? COLORS.focusedIcon : COLORS.inactiveIcon}
+      tintColor={focused ? "#ffffff" : "#9ca3af"}
       resizeMode="contain"
       className="w-7 h-7"
     />
@@ -31,6 +25,7 @@ const TabIcon = ({
 );
 
 export default function Layout() {
+  const { isDark } = useTheme();
   return (
     <Tabs
       initialRouteName="home"
@@ -39,9 +34,9 @@ export default function Layout() {
         tabBarInactiveTintColor: "white",
         tabBarShowLabel: false,
         tabBarStyle: {
-          backgroundColor: COLORS.tabBarBg,
+          backgroundColor: isDark ? "#1C1C1E" : "#333333",
           borderRadius: 50,
-          paddingBottom: 0, // ios only
+          paddingBottom: 0,
           overflow: "hidden",
           marginHorizontal: 20,
           marginBottom: 20,
@@ -62,7 +57,7 @@ export default function Layout() {
           tabBarIcon: ({ focused }) => (
             <TabIcon source={icons.home} focused={focused} />
           ),
-          tabBarAccessibilityLabel: "Home tab",
+          tabBarAccessibilityLabel: "Home tab — shows your location and nearby drivers",
         }}
       />
       <Tabs.Screen
@@ -73,7 +68,7 @@ export default function Layout() {
           tabBarIcon: ({ focused }) => (
             <TabIcon source={icons.list} focused={focused} />
           ),
-          tabBarAccessibilityLabel: "Rides tab",
+          tabBarAccessibilityLabel: "Rides tab — view your ride history and payments",
         }}
       />
       <Tabs.Screen
@@ -84,7 +79,7 @@ export default function Layout() {
           tabBarIcon: ({ focused }) => (
             <TabIcon source={icons.chat} focused={focused} />
           ),
-          tabBarAccessibilityLabel: "Chat tab",
+          tabBarAccessibilityLabel: "Chat tab — messages with drivers and support",
         }}
       />
       <Tabs.Screen
@@ -95,7 +90,7 @@ export default function Layout() {
           tabBarIcon: ({ focused }) => (
             <TabIcon source={icons.profile} focused={focused} />
           ),
-          tabBarAccessibilityLabel: "Profile tab",
+          tabBarAccessibilityLabel: "Profile tab — account settings and preferences",
         }}
       />
     </Tabs>
