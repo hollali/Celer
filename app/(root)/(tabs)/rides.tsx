@@ -11,8 +11,10 @@ import {
 import { FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { GlassView } from "@/components/GlassView";
 import { icons, images } from "@/constants";
 import { useFetch } from "@/lib/fetch";
+import { useTheme } from "@/lib/ThemeContext";
 import { formatDate, formatTime } from "@/lib/utils";
 import { Ride } from "@/types/type";
 import { a11y, a11yButton, a11yImage } from "@/lib/accessibility";
@@ -54,11 +56,19 @@ const Rides = () => {
     }
   };
 
+  const { isDark, useLiquidGlass } = useTheme();
+
   const renderRideItem = ({ item }: { item: Ride }) => {
     const isPending = item.payment_status === "pending";
 
     return (
-      <View className="flex flex-row items-center bg-white dark:bg-dark-card rounded-xl shadow-sm shadow-neutral-300 dark:shadow-dark-border mb-3 p-4" {...a11y(`Ride from ${item.origin_address} to ${item.destination_address}`, `Status: ${item.payment_status}, Fare: $${item.fare_price}`)}>
+      <GlassView
+        intensity={70}
+        tint={isDark ? "systemMaterialDark" : "systemThinMaterialLight"}
+        className={`rounded-xl mb-3 p-4 ${useLiquidGlass ? "" : "bg-white dark:bg-dark-card shadow-sm shadow-neutral-300 dark:shadow-dark-border"}`}
+        style={useLiquidGlass ? { borderRadius: 12, overflow: "hidden" } : {}}
+        {...a11y(`Ride from ${item.origin_address} to ${item.destination_address}`, `Status: ${item.payment_status}, Fare: $${item.fare_price}`)}
+      >
         <View className="flex flex-col items-center justify-center mr-4">
           <View className="w-12 h-12 bg-general-500 dark:bg-dark-bg rounded-full items-center justify-center">
             <Image source={icons.to} className="w-6 h-6" {...a11yImage("From")} />
@@ -121,7 +131,7 @@ const Rides = () => {
             </TouchableOpacity>
           )}
         </View>
-      </View>
+      </GlassView>
     );
   };
 

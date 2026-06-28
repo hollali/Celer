@@ -1,8 +1,9 @@
 import { GoogleInputProps } from "@/types/type";
-import { Image, View, useColorScheme } from "react-native";
+import { Image, View, Platform } from "react-native";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 import { colors } from "@/constants";
 import { a11y } from "@/lib/accessibility";
+import { useTheme } from "@/lib/ThemeContext";
 
 const googlePlacesApiKey = process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
 
@@ -13,7 +14,7 @@ const GoogleInput = ({
   textInputBackgroundColor,
   handlePress,
 }: GoogleInputProps) => {
-  const isDark = useColorScheme() === "dark";
+  const { isDark, useLiquidGlass } = useTheme();
   const bgColor = textInputBackgroundColor || (isDark ? colors.dark.card : "white");
 
   return (
@@ -33,11 +34,13 @@ const GoogleInput = ({
             backgroundColor: bgColor,
             borderRadius: 20,
             paddingHorizontal: 20,
-            borderWidth: 1,
-            borderColor: isDark ? colors.dark.border : "#E2E8F0",
+            borderWidth: useLiquidGlass ? 0.5 : 1,
+            borderColor: useLiquidGlass
+              ? isDark ? "rgba(255,255,255,0.12)" : "rgba(60,60,67,0.15)"
+              : isDark ? colors.dark.border : "#E2E8F0",
           },
           textInput: {
-            backgroundColor: bgColor,
+            backgroundColor: "transparent",
             color: isDark ? colors.dark.text : "#000",
             fontSize: 16,
             fontWeight: "600",

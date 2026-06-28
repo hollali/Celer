@@ -18,11 +18,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import CustomButton from "@/components/customButton";
 import DriverCard from "@/components/DriverCard";
+import { GlassView } from "@/components/GlassView";
 import GoogleInput from "@/components/GoogleInput";
 import Map from "@/components/Map";
-import { icons, images } from "@/constants";
+import { colors, icons, images } from "@/constants";
 import { fetchAPI } from "@/lib/fetch";
 import { useLocationStore, useDriverStore } from "@/store";
+import { useTheme } from "@/lib/ThemeContext";
 import { MarkerData } from "@/types/type";
 import { a11y, a11yButton, a11yImage } from "@/lib/accessibility";
 
@@ -87,6 +89,7 @@ const FALLBACK_DRIVERS: MarkerData[] = [
 
 const Home = () => {
   const { user } = useUser();
+  const { isDark, useLiquidGlass } = useTheme();
   const {
     setUserLocation,
     setDestinationLocation,
@@ -200,13 +203,8 @@ const Home = () => {
     }
   };
 
-  return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-dark-bg">
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        className="flex-1"
-      >
-      {/* Header */}
+  const content = (
+    <>
       <View className="flex flex-row items-center justify-between px-5 pt-3">
         <View>
           <Text className="text-lg font-JakartaExtraBold text-black dark:text-dark-text">
@@ -234,15 +232,20 @@ const Home = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Map */}
       <View className="flex-1 rounded-2xl mx-5 mt-4 overflow-hidden">
         <Map />
       </View>
 
-      {/* Bottom sheet — scrollable with padding for the tab bar */}
-      <View
-        className="bg-white dark:bg-dark-card px-5 pt-5 rounded-t-3xl shadow-lg dark:border dark:border-dark-border"
-        style={{ maxHeight: 260 }}
+      <GlassView
+        intensity={75}
+        tint={isDark ? "systemMaterialDark" : "systemChromeMaterialLight"}
+        className={`px-5 pt-5 rounded-t-3xl ${useLiquidGlass ? "" : "bg-white dark:bg-dark-card shadow-lg dark:border dark:border-dark-border"}`}
+        style={useLiquidGlass ? {
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+          overflow: "hidden",
+          maxHeight: 260,
+        } : { maxHeight: 260 }}
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -251,25 +254,23 @@ const Home = () => {
         >
           {!showDriverSelection ? (
             <>
-              {/* Search inputs */}
               <GoogleInput
                 icon={icons.search}
                 initialLocation={useLocationStore.getState().userAddress ?? "Your location"}
-                containerStyle="bg-white dark:bg-dark-card"
-                textInputBackgroundColor="#F5F5F5"
+                containerStyle={useLiquidGlass ? "bg-white/40 dark:bg-white/10" : "bg-white dark:bg-dark-card"}
+                textInputBackgroundColor={useLiquidGlass ? "rgba(255,255,255,0.5)" : isDark ? colors.dark.card : "#F5F5F5"}
                 handlePress={() => {}}
               />
               <View className="mt-2">
                 <GoogleInput
                   icon={icons.target}
                   initialLocation="Where to?"
-                  containerStyle="bg-white dark:bg-dark-card"
-                  textInputBackgroundColor="#F5F5F5"
+                  containerStyle={useLiquidGlass ? "bg-white/40 dark:bg-white/10" : "bg-white dark:bg-dark-card"}
+                  textInputBackgroundColor={useLiquidGlass ? "rgba(255,255,255,0.5)" : isDark ? colors.dark.card : "#F5F5F5"}
                   handlePress={handleDestinationPress}
                 />
               </View>
 
-              {/* Recent rides */}
               {rideHistory.length > 0 && (
                 <View className="mt-5">
                   <Text className="text-lg font-JakartaBold mb-3 text-black dark:text-dark-text" {...a11y("Recent Rides", "Your recent ride history", "header")}>Recent Rides</Text>
@@ -279,7 +280,11 @@ const Home = () => {
                     showsHorizontalScrollIndicator={false}
                     keyExtractor={(item, idx) => idx.toString()}
                     renderItem={({ item }) => (
-                      <TouchableOpacity className="bg-general-500 dark:bg-dark-card rounded-xl p-3 mr-3 w-40 border border-transparent dark:border-dark-border"
+                      <TouchableOpacity className={`rounded-xl p-3 mr-3 w-40 border ${
+                        useLiquidGlass
+                          ? "bg-white/50 dark:bg-white/10 border-white/30 dark:border-white/20"
+                          : "bg-general-500 dark:bg-dark-card border-transparent dark:border-dark-border"
+                      }`}
                         {...a11yButton(`Ride from ${item.origin_address} to ${item.destination_address}`)}
                       >
                         <Text className="font-JakartaSemiBold text-sm text-black dark:text-dark-text" numberOfLines={1}>
@@ -296,7 +301,6 @@ const Home = () => {
             </>
           ) : (
             <>
-              {/* Driver selection */}
               <Text className="text-xl font-JakartaBold mb-3 text-black dark:text-dark-text" {...a11y("Select a driver", "", "header")}>
                 Select a driver
               </Text>
@@ -348,7 +352,17 @@ const Home = () => {
             </>
           )}
         </ScrollView>
-      </View>
+      </GlassView>
+    </>
+  );
+
+  return (
+    <SafeAreaView className="flex-1 bg-white dark:bg-dark-bg">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        className="flex-1"
+      >
+        {content}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

@@ -1,5 +1,5 @@
-import { createContext, useContext, useState } from "react";
-import { useColorScheme as useDeviceColorScheme } from "react-native";
+import { createContext, useContext, useEffect, useState } from "react";
+import { Platform, useColorScheme as useDeviceColorScheme } from "react-native";
 import { useColorScheme as useNativewindColorScheme } from "nativewind";
 
 type ThemeMode = "light" | "dark" | "system";
@@ -10,6 +10,8 @@ interface ThemeContextType {
   themeMode: ThemeMode;
   setThemeMode: (mode: ThemeMode) => void;
   resolvedTheme: Theme;
+  isIOS: boolean;
+  useLiquidGlass: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -17,10 +19,15 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { colorScheme, setColorScheme } = useNativewindColorScheme();
   const deviceScheme = useDeviceColorScheme();
+  const [themeMode, setThemeModeState] = useState<ThemeMode>(
+    colorScheme ?? "light",
+  );
 
-  const initialMode: ThemeMode =
-    colorScheme === undefined ? "system" : colorScheme;
-  const [themeMode, setThemeModeState] = useState<ThemeMode>(initialMode);
+  useEffect(() => {
+    if (colorScheme === undefined) {
+      setColorScheme("light");
+    }
+  }, []);
 
   const setThemeMode = (mode: ThemeMode) => {
     setThemeModeState(mode);
@@ -30,6 +37,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const resolvedTheme: Theme =
     colorScheme ?? deviceScheme ?? "light";
 
+  const isIOS = Platform.OS === "ios";
+  const useLiquidGlass = isIOS;
+
   return (
     <ThemeContext.Provider
       value={{
@@ -37,6 +47,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         themeMode,
         setThemeMode,
         resolvedTheme,
+        isIOS,
+        useLiquidGlass,
       }}
     >
       {children}

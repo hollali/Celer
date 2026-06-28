@@ -138,3 +138,30 @@ declare interface DriverCardProps {
 	selected: number;
 	setSelected: () => void;
 }
+
+declare interface Conversation {
+	id: number;
+	driver_id: number | null;
+	is_support: boolean;
+	is_safety: boolean;
+	is_promo: boolean;
+	last_message: string;
+	last_message_at: string;
+	user_unread: number;
+	created_at: string;
+	name: string;
+	role: string;
+	avatar_color: string;
+	avatar_initials: string;
+	type: "driver" | "support" | "safety" | "promo";
+	online: boolean;
+}
+
+declare interface Message {
+	id: number;
+	conversation_id: number;
+	sender_type: "user" | "driver" | "support" | "safety" | "promo";
+	sender_name: string;
+	text: string;
+	created_at: string;
+}

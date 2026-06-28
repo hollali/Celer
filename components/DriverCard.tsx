@@ -1,26 +1,19 @@
+import { BlurView } from "expo-blur";
 import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 
 import { icons } from "@/constants";
 import { formatTime } from "@/lib/utils";
+import { useTheme } from "@/lib/ThemeContext";
 import { DriverCardProps } from "@/types/type";
 import { a11yButton, a11y } from "@/lib/accessibility";
 
 const DriverCard = ({ item, selected, setSelected }: DriverCardProps) => {
+  const { isDark, useLiquidGlass } = useTheme();
   const isSelected = selected === item.id;
-  return (
-    <TouchableOpacity
-      onPress={setSelected}
-      className={`${
-        isSelected ? "bg-general-600 dark:bg-primary-800" : "bg-white dark:bg-dark-card"
-      } flex flex-row items-center justify-between py-5 px-3 rounded-xl border border-transparent dark:border-dark-border`}
-      {...a11yButton(
-        `Select driver ${item.title}, rating ${item.rating}, price $${item.price}`,
-        "Double tap to select this driver",
-        false,
-        isSelected
-      )}
-    >
+
+  const cardContent = (
+    <>
       <Image
         source={{ uri: item.profile_image_url }}
         className="w-14 h-14 rounded-full"
@@ -73,6 +66,55 @@ const DriverCard = ({ item, selected, setSelected }: DriverCardProps) => {
         resizeMode="contain"
         {...a11y(`${item.title}'s car`, "", "image")}
       />
+    </>
+  );
+
+  if (useLiquidGlass) {
+    return (
+      <TouchableOpacity
+        onPress={setSelected}
+        activeOpacity={0.75}
+        style={{ borderRadius: 12, overflow: "hidden" }}
+        {...a11yButton(
+          `Select driver ${item.title}, rating ${item.rating}, price $${item.price}`,
+          "Double tap to select this driver",
+          false,
+          isSelected
+        )}
+      >
+        <BlurView
+          intensity={isSelected ? 90 : 65}
+          tint={isDark ? "systemMaterialDark" : "systemThinMaterialLight"}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            paddingVertical: 20,
+            paddingHorizontal: 12,
+            borderRadius: 12,
+            overflow: "hidden",
+          }}
+        >
+          {cardContent}
+        </BlurView>
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    <TouchableOpacity
+      onPress={setSelected}
+      className={`${
+        isSelected ? "bg-general-600 dark:bg-primary-800" : "bg-white dark:bg-dark-card"
+      } flex flex-row items-center justify-between py-5 px-3 rounded-xl border border-transparent dark:border-dark-border`}
+      {...a11yButton(
+        `Select driver ${item.title}, rating ${item.rating}, price $${item.price}`,
+        "Double tap to select this driver",
+        false,
+        isSelected
+      )}
+    >
+      {cardContent}
     </TouchableOpacity>
   );
 };

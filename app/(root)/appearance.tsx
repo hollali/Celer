@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 import { router } from "expo-router";
 import React from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Platform, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "@/lib/ThemeContext";
 import { a11y, a11yButton, a11yHeader } from "@/lib/accessibility";
@@ -84,10 +85,34 @@ const OptionCard = ({ value, label, description, icon, selected, onSelect, isDar
 );
 
 const Appearance = () => {
-  const { themeMode, setThemeMode, resolvedTheme, isDark } = useTheme();
+  const { themeMode, setThemeMode, resolvedTheme, isDark, useLiquidGlass } = useTheme();
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-dark-bg">
+      {useLiquidGlass ? (
+        <BlurView
+          intensity={80}
+          tint={isDark ? "systemMaterialDark" : "systemChromeMaterialLight"}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            paddingHorizontal: 20,
+            paddingVertical: 16,
+            borderBottomWidth: Platform.OS === "ios" ? 0.5 : 1,
+            borderBottomColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(60,60,67,0.12)",
+          }}
+        >
+          <TouchableOpacity onPress={() => router.back()} {...a11yButton("Go back")}>
+            <Ionicons name="chevron-back" size={22} color={isDark ? "#F5F5F7" : "#0F172A"} />
+          </TouchableOpacity>
+          <Text
+            className="ml-4 text-lg font-JakartaBold text-slate-900 dark:text-dark-text"
+            {...a11yHeader("Appearance")}
+          >
+            Appearance
+          </Text>
+        </BlurView>
+      ) : (
       <View className="flex-row items-center px-5 py-4 bg-white dark:bg-dark-card border-b border-slate-100 dark:border-dark-border">
         <TouchableOpacity onPress={() => router.back()} {...a11yButton("Go back")}>
           <Ionicons name="chevron-back" size={22} color={isDark ? "#F5F5F7" : "#0F172A"} />
@@ -99,6 +124,7 @@ const Appearance = () => {
           Appearance
         </Text>
       </View>
+      )}
 
       <ScrollView className="px-5" showsVerticalScrollIndicator={false}>
         <View className="mt-5 rounded-2xl bg-white dark:bg-dark-card p-4 border border-slate-100 dark:border-dark-border">

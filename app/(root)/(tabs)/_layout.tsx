@@ -1,6 +1,7 @@
 import { icons } from "@/constants";
 import { Tabs } from "expo-router";
-import { Image, ImageSourcePropType, View } from "react-native";
+import { BlurView } from "expo-blur";
+import { Image, ImageSourcePropType, Platform, View } from "react-native";
 import { useTheme } from "@/lib/ThemeContext";
 
 const TabIcon = ({
@@ -25,7 +26,23 @@ const TabIcon = ({
 );
 
 export default function Layout() {
-  const { isDark } = useTheme();
+  const { isDark, useLiquidGlass } = useTheme();
+
+  const tabBarStyle: any = {
+    backgroundColor: useLiquidGlass ? "transparent" : isDark ? "#1C1C1E" : "#333333",
+    borderRadius: 50,
+    paddingBottom: 0,
+    overflow: "hidden",
+    marginHorizontal: 20,
+    marginBottom: 20,
+    height: 78,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flexDirection: "row",
+    position: "absolute",
+  };
+
   return (
     <Tabs
       initialRouteName="home"
@@ -33,20 +50,20 @@ export default function Layout() {
         tabBarActiveTintColor: "white",
         tabBarInactiveTintColor: "white",
         tabBarShowLabel: false,
-        tabBarStyle: {
-          backgroundColor: isDark ? "#1C1C1E" : "#333333",
-          borderRadius: 50,
-          paddingBottom: 0,
-          overflow: "hidden",
-          marginHorizontal: 20,
-          marginBottom: 20,
-          height: 78,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexDirection: "row",
-          position: "absolute",
-        },
+        tabBarStyle,
+        tabBarBackground: useLiquidGlass
+          ? () => (
+              <BlurView
+                intensity={80}
+                tint={isDark ? "systemMaterialDark" : "systemUltraThinMaterialLight"}
+                style={{
+                  flex: 1,
+                  borderRadius: 50,
+                  overflow: "hidden",
+                }}
+              />
+            )
+          : undefined,
       }}
     >
       <Tabs.Screen

@@ -1,13 +1,20 @@
 import { Stack } from "expo-router";
+import { Platform } from "react-native";
 import { useTheme } from "@/lib/ThemeContext";
 
 const Layout = () => {
-	const { isDark } = useTheme();
+	const { isDark, useLiquidGlass } = useTheme();
+
+	const getBackground = () => {
+		if (useLiquidGlass) return "transparent";
+		return isDark ? "#0C0C0E" : "#FFFFFF";
+	};
+
 	return (
 		<Stack
 			screenOptions={{
 				headerShown: false,
-				contentStyle: { backgroundColor: isDark ? "#0C0C0E" : "#FFFFFF" },
+				contentStyle: { backgroundColor: getBackground() },
 			}}
 		>
 			<Stack.Screen name="(tabs)" options={{ headerShown: false }} />

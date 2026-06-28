@@ -1,131 +1,44 @@
+import { useUser } from "@clerk/clerk-expo";
 import { colors } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
+  Platform,
+  RefreshControl,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { a11y, a11yButton, a11ySwitch, a11yHeader } from "@/lib/accessibility";
+import { a11y, a11yButton, a11yHeader } from "@/lib/accessibility";
+import { useFetch } from "@/lib/fetch";
 import { useTheme } from "@/lib/ThemeContext";
+import { Conversation } from "@/types/type";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface Conversation {
-  id: string;
-  name: string;
-  role: string;
-  lastMessage: string;
-  time: string;
-  unread: number;
-  online: boolean;
-  avatarColor: string;
-  avatarInitials: string;
-  pinned?: boolean;
-  type: "driver" | "support" | "safety" | "promo";
-}
-
-// ─── Mock data ────────────────────────────────────────────────────────────────
-
-const CONVERSATIONS: Conversation[] = [
-  {
-    id: "1",
-    name: "Marcus T.",
-    role: "Your Driver",
-    lastMessage: "I'm 2 minutes away, pulling up now 🚗",
-    time: "Now",
-    unread: 2,
-    online: true,
-    avatarColor: colors.primary[500],
-    avatarInitials: "MT",
-    pinned: true,
-    type: "driver",
-  },
-  {
-    id: "2",
-    name: "Celer Support",
-    role: "24/7 Help Desk",
-    lastMessage: "Your refund has been processed. Allow 3–5 days.",
-    time: "10m",
-    unread: 1,
-    online: true,
-    avatarColor: colors.success[500],
-    avatarInitials: "CS",
-    type: "support",
-  },
-  {
-    id: "3",
-    name: "Safety Team",
-    role: "Emergency Line",
-    lastMessage: "Your last trip report has been reviewed.",
-    time: "1h",
-    unread: 0,
-    online: true,
-    avatarColor: colors.danger[600],
-    avatarInitials: "ST",
-    type: "safety",
-  },
-  {
-    id: "4",
-    name: "Jordan K.",
-    role: "Past Driver",
-    lastMessage: "Thanks for the 5-star rating! 🙏",
-    time: "Yesterday",
-    unread: 0,
-    online: false,
-    avatarColor: colors.primary[700],
-    avatarInitials: "JK",
-    type: "driver",
-  },
-  {
-    id: "5",
-    name: "Celer Rewards",
-    role: "Promotions & Offers",
-    lastMessage: "You've unlocked a new Gold tier reward 🥇",
-    time: "2d",
-    unread: 0,
-    online: false,
-    avatarColor: colors.warning[500],
-    avatarInitials: "CR",
-    type: "promo",
-  },
-  {
-    id: "6",
-    name: "Aisha M.",
-    role: "Past Driver",
-    lastMessage: "Have a great day! Come ride with me again soon.",
-    time: "3d",
-    unread: 0,
-    online: false,
-    avatarColor: colors.primary[800],
-    avatarInitials: "AM",
-    type: "driver",
-  },
-];
-
-// ─── Badge color map ──────────────────────────────────────────────────────────
+// ─── Badge config ─────────────────────────────────────────────────────────────
 
 const TYPE_BADGE: Record<
-  Conversation["type"],
-  { label: string; bg: string; text: string }
+  string,
+  { label: string; icon: keyof typeof Ionicons.glyphMap; bg: string; text: string }
 > = {
-  driver: { label: "Driver", bg: "bg-primary-100", text: "text-primary-700" },
-  support: { label: "Support", bg: "bg-success-100", text: "text-success-600" },
-  safety: { label: "Safety", bg: "bg-danger-100", text: "text-danger-600" },
-  promo: { label: "Offers", bg: "bg-warning-100", text: "text-warning-700" },
+  driver: { label: "Driver", icon: "car-outline", bg: "bg-primary-100", text: "text-primary-700" },
+  support: { label: "Support", icon: "headset-outline", bg: "bg-success-100", text: "text-success-600" },
+  safety: { label: "Safety", icon: "shield-checkmark-outline", bg: "bg-danger-100", text: "text-danger-600" },
+  promo: { label: "Offers", icon: "pricetags-outline", bg: "bg-warning-100", text: "text-warning-700" },
 };
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Avatar ───────────────────────────────────────────────────────────────────
 
 const Avatar = ({
   color,
   initials,
   online,
-  size = 48,
+  size = 52,
 }: {
   color: string;
   initials: string;
@@ -143,87 +56,76 @@ const Avatar = ({
         justifyContent: "center",
       }}
     >
-      <Text
-        className="text-white font-JakartaBold"
-        style={{ fontSize: size * 0.33 }}
-      >
+      <Text className="text-white font-JakartaBold" style={{ fontSize: size * 0.35 }}>
         {initials}
       </Text>
     </View>
     {online && (
-      <View className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full bg-general-400 border-2 border-white dark:border-dark-card" />
+      <View
+        className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white dark:border-dark-bg"
+        style={{ backgroundColor: colors.general[400] }}
+      />
     )}
   </View>
 );
 
-const PinnedBadge = () => (
-  <View className="flex-row items-center gap-0.5 mb-0.5">
-    <Ionicons name="pin" size={10} color={colors.secondary[500]} />
-    <Text className="text-[10px] font-JakartaMedium text-secondary-500">
-      Pinned
-    </Text>
-  </View>
-);
+// ─── Conversation Card ────────────────────────────────────────────────────────
 
 const ConversationCard = ({ item }: { item: Conversation }) => {
-  const badge = TYPE_BADGE[item.type];
-  const hasUnread = item.unread > 0;
+  const badge = TYPE_BADGE[item.type] || TYPE_BADGE.driver;
+  const hasUnread = item.user_unread > 0;
 
   return (
     <TouchableOpacity
-      activeOpacity={0.75}
-      className="flex-row items-center px-5 py-4"
+      activeOpacity={0.65}
+      className="flex-row items-center px-5 py-4 active:bg-black/5 dark:active:bg-white/5"
       {...a11yButton(
-        `${item.name}, ${item.role}${hasUnread ? `, ${item.unread} unread messages` : ""}`,
+        `${item.name}, ${item.role}${hasUnread ? `, ${item.user_unread} unread messages` : ""}`,
         "Open conversation"
       )}
     >
-      {/* Avatar */}
-      <Avatar
-        color={item.avatarColor}
-        initials={item.avatarInitials}
-        online={item.online}
-      />
+      <Avatar color={item.avatar_color} initials={item.avatar_initials} online={item.online} />
 
-      {/* Content */}
       <View className="flex-1 ml-3">
-        {item.pinned && <PinnedBadge />}
         <View className="flex-row items-center justify-between">
+          <View className="flex-row items-center gap-1.5 flex-shrink">
+            <Text
+              className={`text-[15px] ${hasUnread ? "font-JakartaBold" : "font-JakartaSemiBold"} text-secondary-900 dark:text-dark-text`}
+              numberOfLines={1}
+            >
+              {item.name}
+            </Text>
+          </View>
           <Text
-            className={`text-base ${hasUnread ? "font-JakartaBold" : "font-JakartaMedium"} text-secondary-900 dark:text-dark-text`}
-            numberOfLines={1}
+            className={`text-[11px] ml-2 ${hasUnread ? "font-JakartaBold text-primary-500" : "font-Jakarta text-secondary-500 dark:text-dark-text-secondary"}`}
           >
-            {item.name}
-          </Text>
-          <Text
-            className={`text-xs ml-2 ${hasUnread ? "font-JakartaBold text-primary-500" : "font-Jakarta text-secondary-500 dark:text-dark-text-secondary"}`}
-          >
-            {item.time}
+            {formatTimeAgo(item.last_message_at)}
           </Text>
         </View>
 
         <View className="flex-row items-center gap-1.5 mt-0.5">
-          <View className={`rounded-full px-1.5 py-0.5 ${badge.bg} dark:opacity-80`}>
+          <View className={`rounded-full px-2 py-0.5 ${badge.bg} dark:opacity-80 flex-row items-center gap-1`}>
+            <Ionicons name={badge.icon} size={8} color={badge.text.includes("primary") ? "#475A99" : badge.text.includes("success") ? "#2F855A" : badge.text.includes("danger") ? "#C53030" : "#A16207"} />
             <Text className={`text-[9px] font-JakartaBold ${badge.text} dark:text-dark-text`}>
               {badge.label}
             </Text>
           </View>
-          <Text className="text-xs font-JakartaMedium text-secondary-500 dark:text-dark-text-secondary flex-1">
+          <Text className="text-[11px] font-JakartaMedium text-secondary-500 dark:text-dark-text-secondary flex-1">
             {item.role}
           </Text>
         </View>
 
         <View className="flex-row items-center justify-between mt-1">
           <Text
-            className={`text-sm flex-1 mr-2 ${hasUnread ? "font-JakartaMedium text-secondary-800 dark:text-dark-text" : "font-Jakarta text-secondary-500 dark:text-dark-text-secondary"}`}
+            className={`text-[13px] flex-1 mr-3 leading-4 ${hasUnread ? "font-JakartaMedium text-secondary-800 dark:text-dark-text" : "font-Jakarta text-secondary-500 dark:text-dark-text-secondary"}`}
             numberOfLines={1}
           >
-            {item.lastMessage}
+            {item.last_message}
           </Text>
           {hasUnread && (
-            <View className="h-5 min-w-5 rounded-full bg-primary-500 items-center justify-center px-1">
-              <Text className="text-[10px] font-JakartaBold text-white" accessibilityLabel={`${item.unread} unread`}>
-                {item.unread}
+            <View className="h-5 min-w-5 rounded-full bg-primary-500 items-center justify-center px-1.5">
+              <Text className="text-[10px] font-JakartaBold text-white" accessibilityLabel={`${item.user_unread} unread`}>
+                {item.user_unread}
               </Text>
             </View>
           )}
@@ -233,187 +135,417 @@ const ConversationCard = ({ item }: { item: Conversation }) => {
   );
 };
 
-const Divider = () => <View className="h-px bg-general-300 dark:bg-dark-border mx-5" accessibilityRole="none" />;
+function formatTimeAgo(dateStr: string): string {
+  if (!dateStr) return "";
+  const now = Date.now();
+  const date = new Date(dateStr).getTime();
+  const diffMs = now - date;
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return "Now";
+  if (diffMin < 60) return `${diffMin}m`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay === 1) return "Yesterday";
+  return `${diffDay}d`;
+}
+
+function getTimeGroup(dateStr: string): "today" | "yesterday" | "older" {
+  if (!dateStr) return "older";
+  const now = new Date();
+  const date = new Date(dateStr);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const yesterday = today - 86400000;
+  const dateTs = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  if (dateTs === today) return "today";
+  if (dateTs === yesterday) return "yesterday";
+  return "older";
+}
+
+// ─── Section Header ───────────────────────────────────────────────────────────
+
+const SectionHeader = ({ title }: { title: string }) => (
+  <View className="px-5 pt-5 pb-1.5">
+    <Text className="text-[12px] font-JakartaBold uppercase tracking-[1.5px] text-secondary-500 dark:text-dark-text-secondary">
+      {title}
+    </Text>
+  </View>
+);
 
 // ─── Filter Chip ──────────────────────────────────────────────────────────────
 
-const FILTERS = ["All", "Drivers", "Support", "Offers"] as const;
-type Filter = (typeof FILTERS)[number];
+const FILTERS: { key: Filter; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { key: "All", label: "All", icon: "chatbubbles-outline" },
+  { key: "Drivers", label: "Drivers", icon: "car-outline" },
+  { key: "Support", label: "Support", icon: "headset-outline" },
+  { key: "Offers", label: "Offers", icon: "pricetags-outline" },
+];
+
+type Filter = "All" | "Drivers" | "Support" | "Offers";
 
 const FilterChip = ({
   label,
+  icon,
   active,
   onPress,
 }: {
   label: string;
+  icon: keyof typeof Ionicons.glyphMap;
   active: boolean;
   onPress: () => void;
 }) => (
   <TouchableOpacity
     onPress={onPress}
     activeOpacity={0.7}
-    className={`mr-2 rounded-full px-4 py-1.5 border ${
-      active ? "bg-secondary-900 dark:bg-primary-500 border-secondary-900 dark:border-primary-500" : "bg-white dark:bg-dark-card border-secondary-300 dark:border-dark-border"
+    className={`mr-2.5 rounded-full px-4 py-2 flex-row items-center gap-1.5 ${
+      active ? "bg-secondary-900 dark:bg-primary-500" : "bg-white/60 dark:bg-white/10 border border-secondary-300/40 dark:border-white/15"
     }`}
     {...a11yButton(label, `Filter by ${label}`, false, active)}
   >
+    <Ionicons name={icon} size={14} color={active ? "#FFFFFF" : "#8E8E93"} />
     <Text
-      className={`text-sm font-JakartaMedium ${active ? "text-white" : "text-secondary-700 dark:text-dark-text-secondary"}`}
+      className={`text-[13px] font-JakartaSemiBold ${active ? "text-white" : "text-secondary-500 dark:text-dark-text-secondary"}`}
     >
       {label}
     </Text>
   </TouchableOpacity>
 );
 
-// ─── Empty state ──────────────────────────────────────────────────────────────
+// ─── Active Ride Banner ───────────────────────────────────────────────────────
+
+const ActiveRideBanner = () => {
+  const { isDark, useLiquidGlass } = useTheme();
+
+  if (useLiquidGlass) {
+    return (
+      <TouchableOpacity
+        activeOpacity={0.85}
+        style={{ marginHorizontal: 16, marginTop: 16, borderRadius: 20, overflow: "hidden" }}
+        {...a11yButton("Active ride with Marcus T.", "Open live trip chat")}
+      >
+        <BlurView
+          intensity={80}
+          tint={isDark ? "systemMaterialDark" : "systemThinMaterialLight"}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            padding: 16,
+          }}
+        >
+          <View className="h-12 w-12 rounded-full bg-primary-500 items-center justify-center">
+            <Ionicons name="car-sport-outline" size={22} color="white" />
+          </View>
+          <View className="ml-3 flex-1">
+            <Text className="text-primary-500 dark:text-primary-400 font-JakartaBold text-sm">
+              Active Ride
+            </Text>
+            <Text className="text-secondary-900 dark:text-dark-text font-JakartaMedium text-[13px] mt-0.5">
+              Marcus T. · ETA 2 min
+            </Text>
+            <Text className="text-secondary-500 dark:text-dark-text-secondary text-[11px] font-Jakarta mt-0.5">
+              Tap to view live trip
+            </Text>
+          </View>
+          <View className="h-8 w-8 rounded-full bg-primary-500/10 dark:bg-primary-500/20 items-center justify-center">
+            <Ionicons name="chevron-forward" size={16} color={colors.primary[500]} />
+          </View>
+        </BlurView>
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.85}
+      className="mx-5 mt-4 rounded-2xl bg-primary-500 p-4 flex-row items-center"
+      {...a11yButton("Active ride with Marcus T.", "Open live trip chat")}
+    >
+      <View className="h-12 w-12 rounded-full bg-white/20 items-center justify-center">
+        <Ionicons name="car-sport-outline" size={22} color="white" />
+      </View>
+      <View className="ml-3 flex-1">
+        <Text className="text-white font-JakartaBold text-sm">Active Ride</Text>
+        <Text className="text-white/80 font-JakartaMedium text-[13px] mt-0.5">Marcus T. · ETA 2 min</Text>
+        <Text className="text-primary-200 text-[11px] font-Jakarta mt-0.5">Tap to view live trip</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.6)" />
+    </TouchableOpacity>
+  );
+};
+
+// ─── Empty State ──────────────────────────────────────────────────────────────
 
 const EmptyState = () => (
   <View className="flex-1 items-center justify-center py-24" accessibilityLabel="No conversations found">
-    <View className="h-16 w-16 rounded-full bg-general-300 dark:bg-dark-card items-center justify-center">
-      <Ionicons name="chatbubbles-outline" size={30} color={colors.general[800]} />
+    <View className="h-20 w-20 rounded-full bg-general-300 dark:bg-dark-card items-center justify-center">
+      <Ionicons name="chatbubbles-outline" size={36} color={colors.general[800]} />
     </View>
-    <Text className="mt-4 text-base font-JakartaSemiBold text-secondary-800 dark:text-dark-text">
+    <Text className="mt-5 text-[17px] font-JakartaSemiBold text-secondary-800 dark:text-dark-text">
       No conversations found
     </Text>
-    <Text className="mt-1 text-sm font-Jakarta text-secondary-500 dark:text-dark-text-secondary text-center px-8">
+    <Text className="mt-1.5 text-[13px] font-Jakarta text-secondary-500 dark:text-dark-text-secondary text-center px-10 leading-5">
       Start a ride to chat with your driver or contact support.
     </Text>
   </View>
 );
 
+// ─── Header Content ───────────────────────────────────────────────────────────
+
+const HeaderContent = ({
+  totalUnread,
+  isDark,
+  query,
+  setQuery,
+  activeFilter,
+  setActiveFilter,
+}: {
+  totalUnread: number;
+  isDark: boolean;
+  query: string;
+  setQuery: (q: string) => void;
+  activeFilter: Filter;
+  setActiveFilter: (f: Filter) => void;
+}) => (
+  <>
+    <View className="flex-row items-center justify-between mb-4">
+      <View>
+        <Text className="text-[28px] font-JakartaExtraBold text-secondary-900 dark:text-dark-text" {...a11yHeader("Messages")}>
+          Messages
+        </Text>
+        {totalUnread > 0 && (
+          <View className="flex-row items-center gap-1.5 mt-0.5">
+            <View className="h-2 w-2 rounded-full bg-primary-500" />
+            <Text className="text-[12px] font-JakartaMedium text-secondary-500 dark:text-dark-text-secondary">
+              {totalUnread} unread
+            </Text>
+          </View>
+        )}
+      </View>
+      <TouchableOpacity
+        className="h-11 w-11 rounded-full bg-primary-500 items-center justify-center"
+        {...a11yButton("New message", "Compose a new message")}
+      >
+        <Ionicons name="create-outline" size={20} color="white" />
+      </TouchableOpacity>
+    </View>
+
+    <View className="flex-row items-center bg-general-500 dark:bg-dark-card rounded-2xl px-4 h-11 gap-2">
+      <Ionicons name="search-outline" size={17} color={colors.general[800]} />
+      <TextInput
+        value={query}
+        onChangeText={setQuery}
+        placeholder="Search messages"
+        placeholderTextColor={colors.general[800]}
+        className="flex-1 text-[14px] font-JakartaMedium text-secondary-800 dark:text-dark-text h-11"
+        accessibilityLabel="Search conversations"
+        returnKeyType="search"
+      />
+      {query.length > 0 && (
+        <TouchableOpacity onPress={() => setQuery("")} {...a11yButton("Clear search")}>
+          <View className="h-5 w-5 rounded-full bg-general-800/30 items-center justify-center">
+            <Ionicons name="close" size={12} color={colors.general[800]} />
+          </View>
+        </TouchableOpacity>
+      )}
+    </View>
+
+    <View className="flex-row mt-3.5" accessibilityLabel="Filter conversations" accessibilityRole="none">
+      {FILTERS.map((f) => (
+        <FilterChip
+          key={f.key}
+          label={f.label}
+          icon={f.icon}
+          active={activeFilter === f.key}
+          onPress={() => setActiveFilter(f.key)}
+        />
+      ))}
+    </View>
+  </>
+);
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+interface Section {
+  title: string;
+  data: Conversation[];
+}
+
+function groupConversations(convs: Conversation[]): Section[] {
+  const groups: Record<string, Conversation[]> = { today: [], yesterday: [], older: [] };
+  for (const c of convs) {
+    const group = getTimeGroup(c.last_message_at);
+    groups[group]?.push(c);
+  }
+  const result: Section[] = [];
+  if (groups.today.length) result.push({ title: "Today", data: groups.today });
+  if (groups.yesterday.length) result.push({ title: "Yesterday", data: groups.yesterday });
+  if (groups.older.length) result.push({ title: "Earlier", data: groups.older });
+  return result;
+}
+
+type ListItem =
+  | { type: "section"; title: string; data: Conversation[] }
+  | { type: "conversation"; data: Conversation };
+
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 const Chat = () => {
-  const { isDark } = useTheme();
+  const { user } = useUser();
+  const { isDark, useLiquidGlass } = useTheme();
   const [query, setQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<Filter>("All");
+  const listRef = useRef<FlatList>(null);
 
-  const totalUnread = CONVERSATIONS.reduce((acc, c) => acc + c.unread, 0);
+  const email = user?.primaryEmailAddress?.emailAddress;
 
-  const filtered = CONVERSATIONS.filter((c) => {
-    const matchesSearch =
-      c.name.toLowerCase().includes(query.toLowerCase()) ||
-      c.lastMessage.toLowerCase().includes(query.toLowerCase());
+  const {
+    data: conversations,
+    loading,
+    refetch,
+  } = useFetch<Conversation[]>(`/(api)/chat?user_email=${email}`);
 
-    const matchesFilter =
-      activeFilter === "All" ||
-      (activeFilter === "Drivers" && c.type === "driver") ||
-      (activeFilter === "Support" &&
-        (c.type === "support" || c.type === "safety")) ||
-      (activeFilter === "Offers" && c.type === "promo");
+  const convs = conversations ?? [];
 
-    return matchesSearch && matchesFilter;
-  });
+  const totalUnread = useMemo(
+    () => convs.reduce((acc, c) => acc + (c.user_unread || 0), 0),
+    [convs]
+  );
+
+  const filtered = useMemo(() => {
+    return convs.filter((c) => {
+      const matchesSearch =
+        c.name.toLowerCase().includes(query.toLowerCase()) ||
+        (c.last_message || "").toLowerCase().includes(query.toLowerCase());
+      const matchesFilter =
+        activeFilter === "All" ||
+        (activeFilter === "Drivers" && c.type === "driver") ||
+        (activeFilter === "Support" && (c.type === "support" || c.type === "safety")) ||
+        (activeFilter === "Offers" && c.type === "promo");
+      return matchesSearch && matchesFilter;
+    });
+  }, [convs, query, activeFilter]);
+
+  const sections = useMemo(() => groupConversations(filtered), [filtered]);
+
+  const flatData = useMemo<ListItem[]>(() => {
+    const items: ListItem[] = [];
+    for (const section of sections) {
+      items.push({ type: "section", title: section.title, data: section.data });
+      for (const conv of section.data) {
+        items.push({ type: "conversation", data: conv });
+      }
+    }
+    return items;
+  }, [sections]);
+
+  const renderItem = useCallback(
+    ({ item }: { item: ListItem }) => {
+      if (item.type === "section") {
+        return <SectionHeader title={item.title} />;
+      }
+      return <ConversationCard item={item.data} />;
+    },
+    []
+  );
+
+  const keyExtractor = useCallback((item: ListItem, idx: number) => {
+    if (item.type === "section") return `section-${item.title}`;
+    return `${item.data.id}`;
+  }, []);
+
+  const totalUnreadHeader = useMemo(() => {
+    if (!totalUnread && !loading) return null;
+    return totalUnread;
+  }, [totalUnread, loading]);
+
+  const renderHeader = () => {
+    if (useLiquidGlass) {
+      return (
+        <BlurView
+          intensity={80}
+          tint={isDark ? "systemMaterialDark" : "systemChromeMaterialLight"}
+          style={{
+            paddingHorizontal: 20,
+            paddingTop: Platform.OS === "ios" ? 8 : 12,
+            paddingBottom: 16,
+            borderBottomWidth: Platform.OS === "ios" ? 0.5 : 1,
+            borderBottomColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(60,60,67,0.12)",
+          }}
+        >
+          <HeaderContent
+            totalUnread={totalUnreadHeader ?? 0}
+            isDark={isDark}
+            query={query}
+            setQuery={setQuery}
+            activeFilter={activeFilter}
+            setActiveFilter={setActiveFilter}
+          />
+        </BlurView>
+      );
+    }
+    return (
+      <View className="px-5 pt-3 pb-4 bg-white dark:bg-dark-bg border-b border-general-300 dark:border-dark-border">
+        <HeaderContent
+          totalUnread={totalUnreadHeader ?? 0}
+          isDark={isDark}
+          query={query}
+          setQuery={setQuery}
+          activeFilter={activeFilter}
+          setActiveFilter={setActiveFilter}
+        />
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-dark-bg">
-      {/* ── Header ── */}
-      <View className="px-5 pt-2 pb-4 bg-white dark:bg-dark-bg border-b border-general-300 dark:border-dark-border">
-        <View className="flex-row items-center justify-between">
-          <View>
-            <Text className="text-2xl font-JakartaBold text-secondary-900 dark:text-dark-text" {...a11yHeader("Messages")}>
-              Messages
-            </Text>
-            {totalUnread > 0 && (
-              <Text className="text-xs font-JakartaMedium text-secondary-500 dark:text-dark-text-secondary mt-0.5" accessibilityLabel={`${totalUnread} unread messages`}>
-                {totalUnread} unread message{totalUnread > 1 ? "s" : ""}
-              </Text>
-            )}
-          </View>
-          <TouchableOpacity
-            className="h-10 w-10 rounded-full bg-general-300 dark:bg-dark-card items-center justify-center"
-            {...a11yButton("New message", "Compose a new message")}
-          >
-            <Ionicons name="create-outline" size={19} color={isDark ? "#F5F5F7" : colors.secondary[900]} />
-          </TouchableOpacity>
-        </View>
+      {renderHeader()}
 
-        {/* Search bar */}
-        <View className="mt-4 flex-row items-center bg-general-500 dark:bg-dark-card rounded-2xl px-4 py-3 gap-2">
-          <Ionicons name="search-outline" size={18} color={colors.general[800]} />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search conversations…"
-            placeholderTextColor={colors.general[800]}
-            className="flex-1 text-sm font-JakartaMedium text-secondary-800 dark:text-dark-text"
-            accessibilityLabel="Search conversations"
-            returnKeyType="search"
-          />
-          {query.length > 0 && (
-            <TouchableOpacity onPress={() => setQuery("")} {...a11yButton("Clear search")}>
-              <Ionicons name="close-circle" size={18} color={colors.general[800]} />
-            </TouchableOpacity>
-          )}
+      {loading && conversations === null ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={colors.primary[500]} />
+          <Text className="mt-3 text-sm font-JakartaMedium text-secondary-500 dark:text-dark-text-secondary">
+            Loading messages...
+          </Text>
         </View>
-
-        {/* Filter chips */}
-        <View className="flex-row mt-3" accessibilityLabel="Filter conversations" accessibilityRole="none">
-          {FILTERS.map((f) => (
-            <FilterChip
-              key={f}
-              label={f}
-              active={activeFilter === f}
-              onPress={() => setActiveFilter(f)}
+      ) : (
+        <FlatList
+          ref={listRef}
+          data={flatData}
+          keyExtractor={keyExtractor}
+          renderItem={renderItem}
+          ListHeaderComponent={<ActiveRideBanner />}
+          ListEmptyComponent={EmptyState}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={false}
+              onRefresh={refetch}
+              tintColor={colors.primary[500]}
+              colors={[colors.primary[500]]}
             />
-          ))}
-        </View>
-      </View>
-
-      {/* ── Active ride banner ── */}
-      <TouchableOpacity
-        activeOpacity={0.85}
-        className="mx-5 mt-4 rounded-2xl bg-primary-500 p-4 flex-row items-center"
-        {...a11yButton("Active ride with Marcus T.", "Open live trip chat")}
-      >
-        <View className="h-10 w-10 rounded-full bg-white/20 items-center justify-center">
-          <Ionicons name="car" size={20} color={colors.white} />
-        </View>
-        <View className="ml-3 flex-1">
-          <Text className="text-white font-JakartaBold text-sm">
-            Active Ride · Marcus T.
-          </Text>
-          <Text className="text-primary-300 text-xs font-JakartaMedium mt-0.5">
-            Tap to open your live trip chat
-          </Text>
-        </View>
-        <Ionicons
-          name="chevron-forward"
-          size={18}
-          color={colors.whiteMuted}
+          }
+          contentContainerStyle={
+            flatData.length === 0 ? { flex: 1 } : { paddingBottom: 100 }
+          }
+          ItemSeparatorComponent={() => null}
         />
-      </TouchableOpacity>
+      )}
 
-      {/* ── Conversation list ── */}
-      <FlatList
-        data={filtered}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <ConversationCard item={item} />}
-        ItemSeparatorComponent={Divider}
-        ListEmptyComponent={EmptyState}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={
-          filtered.length === 0
-            ? { flex: 1 }
-            : { paddingTop: 8, paddingBottom: 32 }
-        }
-      />
-
-      {/* ── Support FAB ── */}
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={() => router.push("/(root)/help" as any)}
         className="absolute bottom-8 right-5 h-14 w-14 rounded-full bg-secondary-900 dark:bg-primary-500 items-center justify-center shadow-lg"
         style={{
-          shadowColor: colors.secondary[900],
+          shadowColor: "#000",
           shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.25,
+          shadowOpacity: 0.2,
           shadowRadius: 8,
           elevation: 8,
         }}
         {...a11yButton("Help and support", "Get assistance")}
       >
-        <Ionicons name="headset-outline" size={24} color={colors.white} />
+        <Ionicons name="headset-outline" size={24} color="white" />
       </TouchableOpacity>
     </SafeAreaView>
   );

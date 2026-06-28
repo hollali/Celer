@@ -1,5 +1,6 @@
 import { SignedIn, SignedOut, useAuth, useUser } from "@clerk/clerk-expo";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 import { Link, router } from "expo-router";
 import React from "react";
 import {
@@ -65,6 +66,18 @@ const MenuRow = ({
   </TouchableOpacity>
 );
 
+const GlassMenuSection = ({ children, isDark }: { children: React.ReactNode; isDark: boolean }) => {
+  return (
+    <BlurView
+      intensity={70}
+      tint={isDark ? "systemMaterialDark" : "systemThinMaterialLight"}
+      style={{ marginHorizontal: 20, marginTop: 24, borderRadius: 16, overflow: "hidden" }}
+    >
+      {children}
+    </BlurView>
+  );
+};
+
 // Quick Action Button
 interface QuickActionProps {
   icon: React.ComponentProps<typeof Ionicons>["name"];
@@ -74,19 +87,43 @@ interface QuickActionProps {
   isDark?: boolean;
 }
 
-const QuickAction = ({ icon, label, onPress, accessibilityHint, isDark = false }: QuickActionProps) => (
-  <TouchableOpacity
-    onPress={onPress}
-    activeOpacity={0.7}
-    className="flex-1 items-center rounded-2xl border border-slate-200 dark:border-dark-border bg-slate-50 dark:bg-dark-card py-4 gap-2"
-    {...a11yButton(label, accessibilityHint)}
-  >
-    <View className="h-11 w-11 items-center justify-center rounded-full bg-white dark:bg-dark-bg">
-      <Ionicons name={icon} size={19} color={isDark ? "#F5F5F7" : "#0F172A"} />
-    </View>
-    <Text className="text-sm font-JakartaMedium text-slate-700 dark:text-dark-text-secondary">{label}</Text>
-  </TouchableOpacity>
-);
+const QuickAction = ({ icon, label, onPress, accessibilityHint, isDark = false }: QuickActionProps) => {
+  const { useLiquidGlass } = useTheme();
+  if (useLiquidGlass) {
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.7}
+        style={{ flex: 1, borderRadius: 16, overflow: "hidden" }}
+        {...a11yButton(label, accessibilityHint)}
+      >
+        <BlurView
+          intensity={60}
+          tint={isDark ? "systemMaterialDark" : "systemThinMaterialLight"}
+          style={{ alignItems: "center", paddingVertical: 16, gap: 8 }}
+        >
+          <View className="h-11 w-11 items-center justify-center rounded-full bg-white/50 dark:bg-white/10">
+            <Ionicons name={icon} size={19} color={isDark ? "#F5F5F7" : "#0F172A"} />
+          </View>
+          <Text className="text-sm font-JakartaMedium text-slate-700 dark:text-dark-text-secondary">{label}</Text>
+        </BlurView>
+      </TouchableOpacity>
+    );
+  }
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.7}
+      className="flex-1 items-center rounded-2xl border border-slate-200 dark:border-dark-border bg-slate-50 dark:bg-dark-card py-4 gap-2"
+      {...a11yButton(label, accessibilityHint)}
+    >
+      <View className="h-11 w-11 items-center justify-center rounded-full bg-white dark:bg-dark-bg">
+        <Ionicons name={icon} size={19} color={isDark ? "#F5F5F7" : "#0F172A"} />
+      </View>
+      <Text className="text-sm font-JakartaMedium text-slate-700 dark:text-dark-text-secondary">{label}</Text>
+    </TouchableOpacity>
+  );
+};
 
 interface StatCardProps {
   label: string;
@@ -95,8 +132,30 @@ interface StatCardProps {
   isDark?: boolean;
 }
 
-const StatCard = ({ label, value, icon, isDark = false }: StatCardProps) => (
-  <View className="flex-1 rounded-2xl border border-slate-200 dark:border-dark-border bg-slate-50 dark:bg-dark-card px-3 py-4" {...a11y(`${label}: ${value}`)}>
+const StatCard = ({ label, value, icon, isDark = false }: StatCardProps) => {
+  const { useLiquidGlass } = useTheme();
+  if (useLiquidGlass) {
+    return (
+      <BlurView
+        intensity={60}
+        tint={isDark ? "systemMaterialDark" : "systemThinMaterialLight"}
+        style={{ flex: 1, borderRadius: 16, overflow: "hidden", paddingHorizontal: 12, paddingVertical: 16 }}
+        {...a11y(`${label}: ${value}`)}
+      >
+        <View className="h-9 w-9 items-center justify-center rounded-full bg-white/50 dark:bg-white/10">
+          <Ionicons name={icon} size={16} color={isDark ? "#F5F5F7" : "#0F172A"} />
+        </View>
+        <Text className="mt-3 text-lg font-JakartaBold text-slate-900 dark:text-dark-text">
+          {value}
+        </Text>
+        <Text className="mt-1 text-xs font-JakartaMedium uppercase tracking-wide text-slate-500 dark:text-dark-text-secondary">
+          {label}
+        </Text>
+      </BlurView>
+    );
+  }
+  return (
+    <View className="flex-1 rounded-2xl border border-slate-200 dark:border-dark-border bg-slate-50 dark:bg-dark-card px-3 py-4" {...a11y(`${label}: ${value}`)}>
     <View className="h-9 w-9 items-center justify-center rounded-full bg-white dark:bg-dark-bg">
       <Ionicons name={icon} size={16} color={isDark ? "#F5F5F7" : "#0F172A"} />
     </View>
@@ -107,13 +166,14 @@ const StatCard = ({ label, value, icon, isDark = false }: StatCardProps) => (
       {label}
     </Text>
   </View>
-);
+  );
+};
 
 // Main Component
 const Profile = () => {
   const { user } = useUser();
   const { signOut } = useAuth();
-  const { isDark, themeMode } = useTheme();
+  const { isDark, themeMode, useLiquidGlass } = useTheme();
 
   const fullName = user?.fullName || "Celer Rider";
   const email = user?.primaryEmailAddress?.emailAddress || "No email available";
@@ -228,6 +288,20 @@ const Profile = () => {
                 isDark={isDark}
               />
             </View>
+            {useLiquidGlass ? (
+              <BlurView
+                intensity={60}
+                tint={isDark ? "systemMaterialDark" : "systemThinMaterialLight"}
+                style={{ marginTop: 12, borderRadius: 16, overflow: "hidden", paddingHorizontal: 16, paddingVertical: 16 }}
+              >
+                <Text className="text-xs font-JakartaBold uppercase tracking-widest text-slate-400 dark:text-dark-text-secondary">
+                  Primary Email
+                </Text>
+                <Text className="mt-2 text-base font-JakartaMedium text-slate-800 dark:text-dark-text">
+                  {email}
+                </Text>
+              </BlurView>
+            ) : (
             <View className="mt-3 rounded-2xl border border-slate-200 dark:border-dark-border bg-slate-50 dark:bg-dark-card px-4 py-4">
               <Text className="text-xs font-JakartaBold uppercase tracking-widest text-slate-400 dark:text-dark-text-secondary">
                 Primary Email
@@ -236,6 +310,7 @@ const Profile = () => {
                 {email}
               </Text>
             </View>
+            )}
           </View>
 
           {/* Quick actions  */}
@@ -264,6 +339,51 @@ const Profile = () => {
           </View>
 
           {/* Menu rows */}
+          {useLiquidGlass ? (
+            <GlassMenuSection isDark={isDark}>
+              <MenuRow
+                icon="shield-checkmark-outline"
+                label="Safety Settings"
+                accessibilityHint="Configure safety features"
+                onPress={() => router.push("/(root)/safety" as any)}
+                isDark={isDark}
+              />
+              <RowDivider />
+              <MenuRow
+                icon="moon-outline"
+                label="Appearance"
+                badge={themeMode === "system" ? "System" : themeMode === "dark" ? "Dark" : "Light"}
+                accessibilityHint="Choose light, dark, or system appearance"
+                onPress={() => router.push("/(root)/appearance" as any)}
+                isDark={isDark}
+              />
+              <RowDivider />
+              <MenuRow
+                icon="pricetags-outline"
+                label="Promotions"
+                badge="2 NEW"
+                accessibilityHint="View available promotions and offers"
+                onPress={() => router.push("/(root)/promotions" as any)}
+                isDark={isDark}
+              />
+              <RowDivider />
+              <MenuRow
+                icon="help-circle-outline"
+                label="Help & Support"
+                accessibilityHint="Get help and contact support"
+                onPress={() => router.push("/(root)/help" as any)}
+                isDark={isDark}
+              />
+              <RowDivider />
+              <MenuRow
+                icon="document-text-outline"
+                label="Legal & Privacy"
+                accessibilityHint="Review legal agreements and privacy settings"
+                onPress={() => router.push("/(root)/legal" as any)}
+                isDark={isDark}
+              />
+            </GlassMenuSection>
+          ) : (
           <View className="mx-5 mt-6 overflow-hidden rounded-2xl border border-slate-200 dark:border-dark-border bg-white dark:bg-dark-card">
             <MenuRow
               icon="shield-checkmark-outline"
@@ -307,9 +427,29 @@ const Profile = () => {
               isDark={isDark}
             />
           </View>
+          )}
 
           {/* Log Out button */}
           <View className="mx-5 mt-6">
+            {useLiquidGlass ? (
+              <BlurView
+                intensity={60}
+                tint={isDark ? "systemMaterialDark" : "systemThinMaterialLight"}
+                style={{ borderRadius: 999, overflow: "hidden" }}
+              >
+                <TouchableOpacity
+                  onPress={handleSignOut}
+                  activeOpacity={0.8}
+                  className="flex-row items-center justify-center gap-2 py-4"
+                  {...a11yButton("Log Out", "Sign out of your account")}
+                >
+                  <Ionicons name="log-out-outline" size={18} color="#EF4444" />
+                  <Text className="text-base font-JakartaBold text-red-500">
+                    Log Out
+                  </Text>
+                </TouchableOpacity>
+              </BlurView>
+            ) : (
             <TouchableOpacity
               onPress={handleSignOut}
               activeOpacity={0.8}
@@ -321,6 +461,7 @@ const Profile = () => {
                 Log Out
               </Text>
             </TouchableOpacity>
+            )}
           </View>
 
           {/* App version */}
