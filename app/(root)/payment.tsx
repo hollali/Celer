@@ -1,4 +1,4 @@
-import { useUser } from "@clerk/clerk-expo";
+import { useUser, useAuth } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
 import { router, useLocalSearchParams } from "expo-router";
@@ -6,6 +6,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  RefreshControl,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -14,6 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import CustomButton from "@/components/customButton";
+import { CURRENCY_SYMBOL } from "@/constants";
 import { fetchAPI, useFetch } from "@/lib/fetch";
 import { formatTime } from "@/lib/utils";
 import { Ride } from "@/types/type";
@@ -25,10 +27,10 @@ type PaymentMethod = "paystack" | "cash";
 const Payment = () => {
   const { user } = useUser();
   const { rideData } = useLocalSearchParams<{ rideData?: string }>();
-  const email = user?.primaryEmailAddress?.emailAddress;
   const { isDark } = useTheme();
+  const { getToken, isLoaded } = useAuth();
 
-  const { data: rides } = useFetch<Ride[]>(`/(api)/ride?user_email=${email}`);
+  const { data: rides, loading, refetch, error } = useFetch<Ride[]>("/(api)/ride", getToken, isLoaded);
 
   const [ride, setRide] = useState<Ride | null>(null);
   const [processing, setProcessing] = useState(false);
@@ -64,15 +66,15 @@ const Payment = () => {
     setProcessing(true);
 
     try {
+      const token = await getToken();
       const initResult = await fetchAPI("/(api)/paystack", {
         method: "POST",
         body: JSON.stringify({
           action: "initialize",
           amount: Number(selectedRide.fare_price),
-          email: user.primaryEmailAddress.emailAddress,
           rideData: { ride_id: selectedRide.ride_id },
         }),
-      });
+      }, token);
 
       if (!initResult.authorization_url) {
         Alert.alert("Error", initResult.error || "Failed to initialize payment");
@@ -90,19 +92,27 @@ const Payment = () => {
         const reference =
           url.searchParams.get("reference") || initResult.reference;
 
+        if (!reference) {
+          Alert.alert("Error", "Payment reference not found. Please try again.");
+          setProcessing(false);
+          return;
+        }
+
         const verifyResult = await fetchAPI("/(api)/paystack", {
           method: "POST",
           body: JSON.stringify({ action: "verify", reference }),
-        });
+        }, token);
 
         if (verifyResult.verified) {
-          await markAsPaid(selectedRide.ride_id);
-          Alert.alert("Payment successful", "Thank you for your payment!", [
-            {
-              text: "OK",
-              onPress: () => router.replace("/(root)/(tabs)/rides"),
-            },
-          ]);
+          const success = await markAsPaid(selectedRide.ride_id);
+          if (success) {
+            Alert.alert("Payment successful", "Thank you for your payment!", [
+              {
+                text: "OK",
+                onPress: () => router.replace("/(root)/(tabs)/rides"),
+              },
+            ]);
+          }
         } else {
           Alert.alert(
             "Payment failed",
@@ -112,8 +122,7 @@ const Payment = () => {
       } else {
         Alert.alert("Payment cancelled", "You cancelled the payment");
       }
-    } catch (error) {
-      console.error("Payment error:", error);
+    } catch {
       Alert.alert("Error", "Something went wrong. Please try again.");
     } finally {
       setProcessing(false);
@@ -135,31 +144,41 @@ const Payment = () => {
           text: "Confirm Cash Payment",
           onPress: async () => {
             setProcessing(true);
-            await markAsPaid(selectedRide.ride_id);
+            const success = await markAsPaid(selectedRide.ride_id);
             setProcessing(false);
-            Alert.alert("Trip Confirmed", "Your driver will expect cash payment upon arrival.", [
-              {
-                text: "OK",
-                onPress: () => router.replace("/(root)/(tabs)/rides"),
-              },
-            ]);
+            if (success) {
+              Alert.alert("Trip Confirmed", "Your driver will expect cash payment upon arrival.", [
+                {
+                  text: "OK",
+                  onPress: () => router.replace("/(root)/(tabs)/rides"),
+                },
+              ]);
+            }
           },
         },
       ]
     );
   };
 
-  const markAsPaid = async (rideId: number) => {
+  const markAsPaid = async (rideId: number): Promise<boolean> => {
     try {
+      const token = await getToken();
+      if (!token) {
+        Alert.alert("Error", "Not authenticated. Please sign in again.");
+        return false;
+      }
       await fetchAPI("/(api)/ride", {
         method: "PATCH",
         body: JSON.stringify({
-          ride_id: rideId,
+          ride_id: Number(rideId),
           payment_status: "paid",
         }),
-      });
-    } catch (error) {
-      console.error("Failed to update ride:", error);
+      }, token);
+      return true;
+    } catch (e) {
+      console.log("markAsPaid error:", e);
+      Alert.alert("Error", "Failed to update ride status. Please contact support.");
+      return false;
     }
   };
 
@@ -174,7 +193,28 @@ const Payment = () => {
         </Text>
       </View>
 
-      <ScrollView className="px-5" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="px-5"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={refetch}
+            tintColor="#0286FF"
+            colors={["#0286FF"]}
+          />
+        }
+      >
+        {error && (
+          <View className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl">
+            <Text className="text-red-600 dark:text-red-400 font-JakartaMedium text-center">
+              {error}
+            </Text>
+            <TouchableOpacity onPress={refetch} className="mt-2">
+              <Text className="text-primary-500 text-center font-JakartaBold">Retry</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         {selectedRide ? (
           <>
             <View className="mt-5 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 p-4">
@@ -245,7 +285,7 @@ const Payment = () => {
                   Fare
                 </Text>
                 <Text className="text-base font-JakartaSemiBold text-slate-900 dark:text-dark-text">
-                  ${selectedRide.fare_price}
+                  {CURRENCY_SYMBOL}{selectedRide.fare_price}
                 </Text>
               </View>
 
@@ -263,7 +303,7 @@ const Payment = () => {
               <View className="flex-row justify-between items-center py-1">
                 <Text className="text-lg font-JakartaBold text-slate-900 dark:text-dark-text">Total</Text>
                 <Text className="text-xl font-JakartaExtraBold text-primary-500">
-                  ${selectedRide.fare_price}
+                  {CURRENCY_SYMBOL}{selectedRide.fare_price}
                 </Text>
               </View>
             </View>
@@ -340,7 +380,7 @@ const Payment = () => {
             {paymentMethod === "paystack" ? (
               <>
                 <CustomButton
-                  title={processing ? "Processing..." : `Pay $${selectedRide.fare_price} with Paystack`}
+                  title={processing ? "Processing..." : `Pay ${CURRENCY_SYMBOL}${selectedRide.fare_price} with Paystack`}
                   onPress={handlePayWithPaystack}
                   disabled={processing}
                 />
@@ -354,7 +394,7 @@ const Payment = () => {
             ) : (
               <>
                 <CustomButton
-                  title={processing ? "Confirming..." : `Pay $${selectedRide.fare_price} with Cash`}
+                  title={processing ? "Confirming..." : `Pay ${CURRENCY_SYMBOL}${selectedRide.fare_price} with Cash`}
                   onPress={handlePayWithCash}
                   disabled={processing}
                   bgVariant="outline"

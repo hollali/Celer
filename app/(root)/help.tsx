@@ -2,7 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import * as Linking from "expo-linking";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { a11y, a11yButton, a11yHeader } from "@/lib/accessibility";
 import { useTheme } from "@/lib/ThemeContext";
@@ -76,11 +77,19 @@ const Help = () => {
             Average support response time: under 3 minutes
           </Text>
           <View className="mt-4 flex-row gap-2">
-            <TouchableOpacity className="flex-1 bg-white/20 rounded-xl px-3 py-3 flex-row items-center justify-center" {...a11yButton("Live chat with support")}>
+            <TouchableOpacity
+              className="flex-1 bg-white/20 rounded-xl px-3 py-3 flex-row items-center justify-center"
+              onPress={() => Alert.alert("Live Chat", "Live chat support coming soon. For now, call us or check the FAQs.", [{ text: "OK" }])}
+              {...a11yButton("Live chat with support")}
+            >
               <Ionicons name="chatbox-ellipses-outline" size={16} color="white" />
               <Text className="text-white ml-2 font-JakartaMedium">Live Chat</Text>
             </TouchableOpacity>
-            <TouchableOpacity className="flex-1 bg-white/20 rounded-xl px-3 py-3 flex-row items-center justify-center" {...a11yButton("Call support")}>
+            <TouchableOpacity
+              className="flex-1 bg-white/20 rounded-xl px-3 py-3 flex-row items-center justify-center"
+              onPress={() => Linking.openURL("tel:+233302210926")}
+              {...a11yButton("Call support")}
+            >
               <Ionicons name="call-outline" size={16} color="white" />
               <Text className="text-white ml-2 font-JakartaMedium">Call Us</Text>
             </TouchableOpacity>
@@ -139,15 +148,11 @@ const Help = () => {
 
         <View className="mt-4 rounded-2xl bg-white dark:bg-dark-card border border-slate-100 dark:border-dark-border p-4 mb-8">
           <Text className="font-JakartaMedium text-slate-900 dark:text-dark-text">Recent Support Tickets</Text>
-          <View className="mt-3 rounded-xl border border-slate-200 dark:border-dark-border p-3">
-            <Text className="font-JakartaMedium text-slate-800 dark:text-dark-text">#5471 • Fare Review</Text>
-            <Text className="text-xs text-amber-600 dark:text-amber-400 mt-1">Pending • Updated 2h ago</Text>
-          </View>
-          <View className="mt-2 rounded-xl border border-slate-200 dark:border-dark-border p-3">
-            <Text className="font-JakartaMedium text-slate-800 dark:text-dark-text">#5458 • Lost Item Report</Text>
-            <Text className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">Resolved • Yesterday</Text>
-          </View>
+          <Text className="text-xs text-slate-500 dark:text-dark-text-secondary mt-2">
+            No recent support tickets.
+          </Text>
           <TouchableOpacity
+            onPress={() => Alert.alert("Coming Soon", "Support tickets coming soon!")}
             className="mt-4 rounded-full bg-slate-900 dark:bg-primary-500 py-3 items-center"
             {...a11yButton("Create new support ticket")}
           >

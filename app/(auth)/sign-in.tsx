@@ -19,6 +19,11 @@ const SignIn = () => {
   const onSignInPress = useCallback(async () => {
     if (!isLoaded) return;
 
+    if (!form.email.trim() || !form.password.trim()) {
+      Alert.alert("Error", "Please enter your email and password.");
+      return;
+    }
+
     try {
       const signInAttempt = await signIn.create({
         identifier: form.email,
@@ -29,11 +34,9 @@ const SignIn = () => {
         await setActive({ session: signInAttempt.createdSessionId });
         router.replace("/(root)/(tabs)/home");
       } else {
-        console.log(JSON.stringify(signInAttempt, null, 2));
         Alert.alert("Error", "Log in failed. Please try again.");
       }
     } catch (err: any) {
-      console.log(JSON.stringify(err, null, 2));
       const message =
         err?.errors?.[0]?.longMessage ?? "Log in failed. Please try again.";
       Alert.alert("Error", message);
@@ -65,10 +68,17 @@ const SignIn = () => {
             value={form.password}
             onChangeText={(value) => setForm({ ...form, password: value })}
           />
+          <Link
+            href="/(auth)/forgot-password"
+            className="text-sm text-right text-primary-500 mt-2"
+            {...a11yLink("Forgot password", "Navigate to password reset")}
+          >
+            Forgot Password?
+          </Link>
           <CustomButton
             title="Sign In"
             onPress={onSignInPress}
-            className="mt-6"
+            className="mt-6 bg-primary-500"
           />
           <OAuth />
           <Link

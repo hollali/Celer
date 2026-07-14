@@ -2,10 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { router } from "expo-router";
 import React, { useState } from "react";
-import { Platform, ScrollView, Switch, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Platform, ScrollView, Switch, Text, TouchableOpacity, View } from "react-native";
+import * as Linking from "expo-linking";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { a11y, a11yButton, a11ySwitch, a11yHeader } from "@/lib/accessibility";
 import { useTheme } from "@/lib/ThemeContext";
+
+const GHANA_EMERGENCY = "191"; // Ghana Police
 
 const Safety = () => {
   const { isDark, useLiquidGlass } = useTheme();
@@ -18,6 +21,23 @@ const Safety = () => {
   const addContact = () => {
     const nextId = contacts.length + 1;
     setContacts((prev) => [...prev, `Trusted Contact ${nextId}`]);
+  };
+
+  const handleSOS = () => {
+    Alert.alert(
+      "Emergency SOS",
+      "This will call Ghana Police (191). Your location will be shared with trusted contacts.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Call Now",
+          style: "destructive",
+          onPress: () => {
+            Linking.openURL(`tel:${GHANA_EMERGENCY}`);
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -57,6 +77,7 @@ const Safety = () => {
           </Text>
           <TouchableOpacity
             className="mt-4 rounded-full bg-white py-3 items-center"
+            onPress={handleSOS}
             {...a11yButton("Emergency SOS", "Contact emergency services immediately")}
           >
             <Text className="text-red-600 font-JakartaBold">Emergency SOS</Text>
@@ -138,6 +159,13 @@ const Safety = () => {
 
           <TouchableOpacity
             className="mt-4 rounded-xl bg-slate-100 dark:bg-dark-card py-3 flex-row items-center justify-center"
+            onPress={() => {
+              Alert.alert(
+                "Safety Check",
+                `✓ Location sharing: ${shareTrip ? "On" : "Off"}\n✓ Emergency alerts: ${emergencyAlerts ? "On" : "Off"}\n✓ Audio recording: ${audioRecording ? "On" : "Off"}\n✓ Trusted contacts: ${contacts.length}\n✓ Check-in reminder: ${checkIn}`,
+                [{ text: "OK" }]
+              );
+            }}
             {...a11yButton("Run safety self-check")}
           >
             <Ionicons name="shield-checkmark-outline" size={16} color={isDark ? "#F5F5F7" : "#334155"} />

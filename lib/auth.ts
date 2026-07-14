@@ -1,34 +1,22 @@
 import * as Linking from "expo-linking";
-import * as SecureStore from "expo-secure-store";
 
 import { fetchAPI } from "./fetch";
 
-export const tokenCache = {
-	async getToken(key: string) {
-		try {
-			const item = await SecureStore.getItemAsync(key);
-			if (item) {
-				console.log(`${key} was used 🔐 \n`);
-			} else {
-				console.log("No values stored under key: " + key);
-			}
-			return item;
-		} catch (error) {
-			console.error("SecureStore get item error: ", error);
-			await SecureStore.deleteItemAsync(key);
-			return null;
-		}
-	},
-	async saveToken(key: string, value: string) {
-		try {
-			return SecureStore.setItemAsync(key, value);
-		} catch (err) {
-			return;
-		}
-	},
-};
+interface OAuthFlowResult {
+	createdSessionId?: string;
+	setActive?: (config: { session: string }) => Promise<void>;
+	signUp?: {
+		createdUserId?: string | null;
+		firstName?: string | null;
+		lastName?: string | null;
+		emailAddress?: string | null;
+	};
+}
 
-export const googleOAuth = async (startOAuthFlow: any) => {
+export const googleOAuth = async (
+	startOAuthFlow: (config?: { redirectUrl?: string }) => Promise<OAuthFlowResult>,
+	getToken?: () => Promise<string | null>,
+) => {
 	try {
 		const { createdSessionId, setActive, signUp } = await startOAuthFlow({
 			redirectUrl: Linking.createURL("/(root)/(tabs)/home"),
@@ -38,15 +26,15 @@ export const googleOAuth = async (startOAuthFlow: any) => {
 			if (setActive) {
 				await setActive({ session: createdSessionId });
 
-				if (signUp.createdUserId) {
+				if (signUp?.createdUserId) {
+					const token = await getToken?.() ?? null;
 					await fetchAPI("/(api)/user", {
 						method: "POST",
 						body: JSON.stringify({
 							name: `${signUp.firstName} ${signUp.lastName}`,
 							email: signUp.emailAddress,
-							clerkId: signUp.createdUserId,
 						}),
-					});
+					}, token);
 				}
 
 				return {
@@ -61,11 +49,13 @@ export const googleOAuth = async (startOAuthFlow: any) => {
 			success: false,
 			message: "An error occurred while signing in with Google",
 		};
-	} catch (err: any) {
-		console.error(err);
-		const errorCode = err?.errors?.[0]?.code ?? err?.code;
+	} catch (err: unknown) {
+		const errorObj = err as Record<string, unknown>;
+		const errors = (errorObj?.errors as Array<Record<string, string>> | undefined) ?? [];
+		const firstError = errors[0];
+		const errorCode = firstError?.code ?? (errorObj?.code as string);
 		const rawMessage =
-			err?.errors?.[0]?.longMessage ?? err?.errors?.[0]?.message ?? err?.message;
+			firstError?.longMessage ?? firstError?.message ?? (errorObj?.message as string);
 		const normalizedMessage =
 			typeof rawMessage === "string"
 				? rawMessage.replace(/^e:/i, "").trim()

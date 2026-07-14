@@ -1,9 +1,10 @@
-import { useUser } from "@clerk/clerk-expo";
+import { useUser, useAuth } from "@clerk/clerk-expo";
 import { router } from "expo-router";
 import React from "react";
 import {
   ActivityIndicator,
   Image,
+  RefreshControl,
   Text,
   TouchableOpacity,
   View,
@@ -12,7 +13,7 @@ import { FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { GlassView } from "@/components/GlassView";
-import { icons, images } from "@/constants";
+import { icons, images, CURRENCY_SYMBOL } from "@/constants";
 import { useFetch } from "@/lib/fetch";
 import { useTheme } from "@/lib/ThemeContext";
 import { formatDate, formatTime } from "@/lib/utils";
@@ -21,13 +22,14 @@ import { a11y, a11yButton, a11yImage } from "@/lib/accessibility";
 
 const Rides = () => {
   const { user } = useUser();
-  const email = user?.primaryEmailAddress?.emailAddress;
+  const { getToken, isLoaded } = useAuth();
 
   const {
     data: recentRides,
     loading,
     refetch,
-  } = useFetch<Ride[]>(`/(api)/ride?user_email=${email}`);
+    error,
+  } = useFetch<Ride[]>("/(api)/ride", getToken, isLoaded);
 
   const formatRideStatus = (status: string) => {
     switch (status) {
@@ -67,7 +69,7 @@ const Rides = () => {
         tint={isDark ? "systemMaterialDark" : "systemThinMaterialLight"}
         className={`rounded-xl mb-3 p-4 ${useLiquidGlass ? "" : "bg-white dark:bg-dark-card shadow-sm shadow-neutral-300 dark:shadow-dark-border"}`}
         style={useLiquidGlass ? { borderRadius: 12, overflow: "hidden" } : {}}
-        {...a11y(`Ride from ${item.origin_address} to ${item.destination_address}`, `Status: ${item.payment_status}, Fare: $${item.fare_price}`)}
+        {...a11y(`Ride from ${item.origin_address} to ${item.destination_address}`, `Status: ${item.payment_status}, Fare: ${CURRENCY_SYMBOL}${item.fare_price}`)}
       >
         <View className="flex flex-col items-center justify-center mr-4">
           <View className="w-12 h-12 bg-general-500 dark:bg-dark-bg rounded-full items-center justify-center">
@@ -94,7 +96,7 @@ const Rides = () => {
             <View className="flex flex-row items-center">
               <Image source={icons.dollar} className="w-4 h-4" {...a11yImage("Price")} />
               <Text className="text-sm font-JakartaMedium text-general-200 dark:text-dark-text-secondary ml-1">
-                ${item.fare_price}
+                {CURRENCY_SYMBOL}{item.fare_price}
               </Text>
             </View>
 
@@ -123,10 +125,10 @@ const Rides = () => {
                 )
               }
               className="mt-2 bg-primary-500 rounded-full py-2 items-center"
-              {...a11yButton(`Pay $${item.fare_price}`, `Complete payment for this ride`)}
+              {...a11yButton(`Pay ${CURRENCY_SYMBOL}${item.fare_price}`, `Complete payment for this ride`)}
             >
               <Text className="text-sm font-JakartaBold text-white">
-                Pay ${item.fare_price}
+                Pay {CURRENCY_SYMBOL}{item.fare_price}
               </Text>
             </TouchableOpacity>
           )}
@@ -138,16 +140,28 @@ const Rides = () => {
   return (
     <SafeAreaView className="flex-1 bg-general-500 dark:bg-dark-bg">
       <FlatList
-        data={recentRides}
-        keyExtractor={(item, idx) => idx.toString()}
+        data={recentRides ?? []}
+        keyExtractor={(item) => String(item.ride_id)}
         renderItem={renderRideItem}
         ListHeaderComponent={
-          <View className="px-5 pt-5 pb-3">
-            <Text className="text-2xl font-JakartaExtraBold text-black dark:text-dark-text" {...a11y("Ride History", "", "header")}>Ride History</Text>
-            <Text className="text-sm font-JakartaMedium text-general-200 dark:text-dark-text-secondary mt-1">
-              Pay for pending rides after your trip
-            </Text>
-          </View>
+          <>
+            <View className="px-5 pt-5 pb-3">
+              <Text className="text-2xl font-JakartaExtraBold text-black dark:text-dark-text" {...a11y("Ride History", "", "header")}>Ride History</Text>
+              <Text className="text-sm font-JakartaMedium text-general-200 dark:text-dark-text-secondary mt-1">
+                Pay for pending rides after your trip
+              </Text>
+            </View>
+            {error && (
+              <View className="mx-5 mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl">
+                <Text className="text-red-600 dark:text-red-400 font-JakartaMedium text-center">
+                  {error}
+                </Text>
+                <TouchableOpacity onPress={refetch} className="mt-2">
+                  <Text className="text-primary-500 text-center font-JakartaBold">Retry</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </>
         }
         ListEmptyComponent={
           loading ? (
@@ -168,6 +182,14 @@ const Rides = () => {
               </Text>
             </View>
           )
+        }
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={refetch}
+            tintColor="#0286FF"
+            colors={["#0286FF"]}
+          />
         }
         contentContainerClassName="pb-8 px-5"
         showsVerticalScrollIndicator={false}

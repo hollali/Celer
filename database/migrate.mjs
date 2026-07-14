@@ -1,19 +1,17 @@
 import { readFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
-import https from "https";
-import dns from "dns";
+import { neon } from "@neondatabase/serverless";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Load .env.local manually
 const envPath = resolve(__dirname, "..", ".env.local");
 const envContent = readFileSync(envPath, "utf-8");
 const envVars = Object.fromEntries(
   envContent
     .split("\n")
     .filter((l) => l && !l.startsWith("#"))
-    .map((l) => l.split("=", 2).map((s) => s.trim()))
+    .map((l) => l.split("=", 2).map((s) => s.trim().replace(/^["']|["']$/g, "")))
 );
 
 const DATABASE_URL = envVars.DATABASE_URL;
@@ -22,79 +20,55 @@ if (!DATABASE_URL) {
   process.exit(1);
 }
 
-// The HTTP endpoint for Neon SQL API is https://api.<region>.aws.neon.tech/sql
-// Built by replacing the first subdomain of the host with "api"
-const pgUrl = new URL(DATABASE_URL);
-const hostParts = pgUrl.hostname.split(".");
-hostParts[0] = "api";
-const apiHost = hostParts.join(".");
-const apiEndpoint = `https://${apiHost}/sql`;
-
-const schema = readFileSync(resolve(__dirname, "schema.sql"), "utf-8");
-
-function splitStatements(sql) {
-  return sql
-    .split("\n")
-    .map((line) => line.replace(/--.*$/, "").trim())
-    .filter((line) => line.length > 0)
-    .join("\n")
-    .split(";")
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
-}
-
-function runQuery(query) {
-  return new Promise((resolve, reject) => {
-    dns.resolve(apiHost, (err, addresses) => {
-      if (err) return reject(err);
-      const ip = addresses[0];
-      const body = JSON.stringify({ query });
-      const options = {
-        hostname: ip,
-        port: 443,
-        path: "/sql",
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "neon-connection-string": DATABASE_URL,
-          "Content-Length": Buffer.byteLength(body),
-        },
-        servername: apiHost,
-        rejectUnauthorized: false,
-      };
-      const req = https.request(options, (res) => {
-        let data = "";
-        res.on("data", (chunk) => (data += chunk));
-        res.on("end", () => {
-          try {
-            const parsed = JSON.parse(data);
-            if (parsed.error || parsed.message) {
-              reject(new Error(parsed.message || parsed.error));
-            } else {
-              resolve(parsed);
-            }
-          } catch {
-            reject(new Error(data));
-          }
-        });
-      });
-      req.on("error", reject);
-      req.write(body);
-      req.end();
-    });
-  });
-}
+const sql = neon(DATABASE_URL);
 
 async function migrate() {
-  const statements = splitStatements(schema);
+  const schema = readFileSync(resolve(__dirname, "schema.sql"), "utf-8");
+
+  // Split on semicolons that are NOT inside $$ blocks (function bodies)
+  const statements = [];
+  let current = "";
+  let inDollarQuote = false;
+
+  for (const line of schema.split("\n")) {
+    const stripped = line.replace(/--.*$/, "").trim();
+    if (!stripped && !current) continue;
+
+    // Track $$ blocks (PL/pgSQL function bodies)
+    const dollarCount = (stripped.match(/\$\$/g) || []).length;
+    if (dollarCount % 2 === 1) {
+      inDollarQuote = !inDollarQuote;
+    }
+
+    current += stripped + "\n";
+
+    if (!inDollarQuote && stripped.endsWith(";")) {
+      const stmt = current.trim();
+      if (stmt.length > 0) {
+        statements.push(stmt);
+      }
+      current = "";
+    }
+  }
+
+  if (current.trim()) {
+    statements.push(current.trim());
+  }
+
   console.log(`Found ${statements.length} statements to execute.\n`);
 
   for (const stmt of statements) {
     try {
-      await runQuery(stmt + ";");
-      console.log(`  OK: ${stmt.slice(0, 70)}...`);
+      await sql.query(stmt);
+      console.log(`  OK: ${stmt.slice(0, 80).replace(/\n/g, " ")}...`);
     } catch (e) {
-      console.error(`  FAIL: ${stmt.slice(0, 70)}...\n    ${e.message}`);
+      // Ignore "already exists" errors for CREATE TABLE/INDEX
+      if (e.message?.includes("already exists")) {
+        console.log(`  SKIP (exists): ${stmt.slice(0, 80).replace(/\n/g, " ")}...`);
+      } else {
+        console.error(`  FAIL: ${stmt.slice(0, 80).replace(/\n/g, " ")}...`);
+        console.error(`    ${e.message}`);
+      }
     }
   }
   console.log("\nMigration complete.");

@@ -10,8 +10,9 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "config": {
-        "googleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+      "bundleIdentifier": "com.celer.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Celer needs your location to find nearby drivers"
       }
     },
     "android": {
@@ -20,12 +21,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.Celer",
-      "config": {
-        "googleMaps": {
-          "apiKey": "YOUR_GOOGLE_MAPS_API_KEY"
-        }
-      }
+      "package": "com.celer.app"
     },
     "web": {
       "bundler": "metro",

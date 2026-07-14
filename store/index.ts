@@ -26,8 +26,18 @@ export const useLocationStore = create<LocationStore>((set) => ({
 export const useDriverStore = create<DriverStore>((set) => ({
   drivers: [] as MarkerData[],
   selectedDriver: null,
+  driversLoading: false,
   setSelectedDriver: (driverId: number) =>
     set(() => ({ selectedDriver: driverId })),
   setDrivers: (drivers: MarkerData[]) => set(() => ({ drivers })),
-  clearSelectedDriver: () => set(() => ({ selectedDriver: null })),
+  setDriversReady: () => set(() => ({ driversLoading: false })),
+  clearSelectedDriver: () => set(() => ({ selectedDriver: null, driversLoading: false })),
+}));
+
+export const useTabStore = create<{
+  tabBarVisible: boolean;
+  setTabBarVisible: (visible: boolean) => void;
+}>((set) => ({
+  tabBarVisible: true,
+  setTabBarVisible: (visible) => set(() => ({ tabBarVisible: visible })),
 }));

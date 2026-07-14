@@ -2,7 +2,7 @@ import { BlurView } from "expo-blur";
 import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 
-import { icons } from "@/constants";
+import { icons, CURRENCY_SYMBOL } from "@/constants";
 import { formatTime } from "@/lib/utils";
 import { useTheme } from "@/lib/ThemeContext";
 import { DriverCardProps } from "@/types/type";
@@ -38,7 +38,7 @@ const DriverCard = ({ item, selected, setSelected }: DriverCardProps) => {
           <View className="flex flex-row items-center">
             <Image source={icons.dollar} className="w-4 h-4" {...a11y("Price", "", "image")} />
             <Text className="text-sm font-JakartaRegular ml-1 text-black dark:text-dark-text">
-              ${item.price}
+              ₵{item.price}
             </Text>
           </View>
 
@@ -76,7 +76,7 @@ const DriverCard = ({ item, selected, setSelected }: DriverCardProps) => {
         activeOpacity={0.75}
         style={{ borderRadius: 12, overflow: "hidden" }}
         {...a11yButton(
-          `Select driver ${item.title}, rating ${item.rating}, price $${item.price}`,
+          `Select driver ${item.title}, rating ${item.rating}, price ₵${item.price}`,
           "Double tap to select this driver",
           false,
           isSelected
@@ -108,7 +108,7 @@ const DriverCard = ({ item, selected, setSelected }: DriverCardProps) => {
         isSelected ? "bg-general-600 dark:bg-primary-800" : "bg-white dark:bg-dark-card"
       } flex flex-row items-center justify-between py-5 px-3 rounded-xl border border-transparent dark:border-dark-border`}
       {...a11yButton(
-        `Select driver ${item.title}, rating ${item.rating}, price $${item.price}`,
+        `Select driver ${item.title}, rating ${item.rating}, price ₵${item.price}`,
         "Double tap to select this driver",
         false,
         isSelected

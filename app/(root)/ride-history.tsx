@@ -1,10 +1,12 @@
-import { useUser } from "@clerk/clerk-expo";
+import { useUser, useAuth } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
+  RefreshControl,
   ScrollView,
   Text,
   TextInput,
@@ -13,7 +15,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { images } from "@/constants";
+import { images, CURRENCY_SYMBOL } from "@/constants";
 import { useFetch } from "@/lib/fetch";
 import { formatDate, formatTime } from "@/lib/utils";
 import { Ride } from "@/types/type";
@@ -25,12 +27,10 @@ const filters = ["All", "Paid", "Pending"] as const;
 
 const RideHistory = () => {
   const { user } = useUser();
-  const email = user?.primaryEmailAddress?.emailAddress;
   const { isDark } = useTheme();
+  const { getToken, isLoaded } = useAuth();
 
-  const { data: rides, loading } = useFetch<Ride[]>(
-    `/(api)/ride?user_email=${email}`
-  );
+  const { data: rides, loading, refetch, error } = useFetch<Ride[]>("/(api)/ride", getToken, isLoaded);
 
   const [selectedFilter, setSelectedFilter] = useState<(typeof filters)[number]>("All");
   const [query, setQuery] = useState("");
@@ -80,7 +80,28 @@ const RideHistory = () => {
         <Text className="ml-4 text-lg font-JakartaBold text-slate-900 dark:text-dark-text" {...a11yHeader("Ride History")}>Ride History</Text>
       </View>
 
-      <ScrollView className="px-5" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="px-5"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={refetch}
+            tintColor="#0286FF"
+            colors={["#0286FF"]}
+          />
+        }
+      >
+        {error && (
+          <View className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl">
+            <Text className="text-red-600 dark:text-red-400 font-JakartaMedium text-center">
+              {error}
+            </Text>
+            <TouchableOpacity onPress={refetch} className="mt-2">
+              <Text className="text-primary-500 text-center font-JakartaBold">Retry</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         <View className="mt-5 flex-row gap-2">
           <View className="flex-1 rounded-2xl bg-white dark:bg-dark-card border border-slate-100 dark:border-dark-border p-4">
             <Text className="text-slate-500 dark:text-dark-text-secondary text-xs">Total rides</Text>
@@ -91,7 +112,7 @@ const RideHistory = () => {
           <View className="flex-1 rounded-2xl bg-white dark:bg-dark-card border border-slate-100 dark:border-dark-border p-4">
             <Text className="text-slate-500 dark:text-dark-text-secondary text-xs">Total spend</Text>
             <Text className="mt-1 font-JakartaBold text-xl text-slate-900 dark:text-dark-text">
-              ${totalSpend}
+              {CURRENCY_SYMBOL}{totalSpend}
             </Text>
           </View>
         </View>
@@ -136,9 +157,9 @@ const RideHistory = () => {
           ) : filteredRides.length > 0 ? (
             filteredRides.map((ride, idx) => (
               <View
-                key={idx}
+                key={ride.ride_id}
                 className="mb-3 rounded-2xl border border-slate-200 dark:border-dark-border bg-white dark:bg-dark-card p-4"
-                {...a11y(`Ride from ${ride.origin_address} to ${ride.destination_address}`, `Status: ${ride.payment_status}, Fare: $${ride.fare_price}`)}
+                {...a11y(`Ride from ${ride.origin_address} to ${ride.destination_address}`, `Status: ${ride.payment_status}, Fare: ${CURRENCY_SYMBOL}${ride.fare_price}`)}
               >
                 <View className="flex-row justify-between items-start">
                   <View className="flex-1 pr-2">
@@ -154,15 +175,15 @@ const RideHistory = () => {
 
                 <View className="mt-3 flex-row items-center justify-between">
                   <Text className="font-JakartaBold text-slate-900 dark:text-dark-text">
-                    ${ride.fare_price}
+                    {CURRENCY_SYMBOL}{ride.fare_price}
                   </Text>
                   {ride.payment_status === "paid" ? (
-                    <TouchableOpacity className="flex-row items-center" {...a11yButton("Rate ride", "Rate this completed ride")}>
+                    <TouchableOpacity className="flex-row items-center" onPress={() => Alert.alert("Coming Soon", "Rating feature coming soon!")} {...a11yButton("Rate ride", "Rate this completed ride")}>
                       <Ionicons name="star-outline" size={16} color="#ca8a04" />
                       <Text className="ml-1 text-amber-600 font-JakartaMedium">Rate ride</Text>
                     </TouchableOpacity>
                   ) : (
-                    <TouchableOpacity {...a11yButton("Rebook", "Book this ride again")}>
+                    <TouchableOpacity onPress={() => Alert.alert("Coming Soon", "Rebooking feature coming soon!")} {...a11yButton("Rebook", "Book this ride again")}>
                       <Text className="text-blue-600 font-JakartaMedium">Rebook</Text>
                     </TouchableOpacity>
                   )}

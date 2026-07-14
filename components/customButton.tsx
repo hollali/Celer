@@ -1,9 +1,7 @@
-import { BlurView } from "expo-blur";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity } from "react-native";
 
 import { ButtonProps } from "@/types/type";
 import { a11yButton } from "@/lib/accessibility";
-import { useTheme } from "@/lib/ThemeContext";
 
 const getBgVariantStyle = (variant: ButtonProps["bgVariant"]) => {
 	switch (variant) {
@@ -16,7 +14,7 @@ const getBgVariantStyle = (variant: ButtonProps["bgVariant"]) => {
 		case "outline":
 			return "bg-transparent border-neutral-300 dark:border-dark-border border-[0.5px]";
 		default:
-			return "bg-[#0286FF]";
+			return "bg-primary-500";
 	}
 };
 
@@ -46,40 +44,6 @@ const CustomButton = ({
 	disabled,
 	...props
 }: ButtonProps) => {
-	const { isDark, useLiquidGlass } = useTheme();
-
-	if (useLiquidGlass && bgVariant === "primary") {
-		return (
-			<TouchableOpacity
-				onPress={onPress}
-				disabled={disabled}
-				activeOpacity={0.8}
-				className={`rounded-full ${disabled ? "opacity-50" : ""} ${className}`}
-				{...a11yButton(title, undefined, disabled)}
-				{...props}
-			>
-				<BlurView
-					intensity={80}
-					tint={isDark ? "systemMaterialDark" : "systemThinMaterialLight"}
-					style={{
-						flexDirection: "row",
-						justifyContent: "center",
-						alignItems: "center",
-						padding: 12,
-						borderRadius: 999,
-						overflow: "hidden",
-					}}
-				>
-					{IconLeft && <IconLeft />}
-					<Text className={`text-lg font-bold ${getTextVariantStyle(textVariant)}`}>
-						{title}
-					</Text>
-					{IconRight && <IconRight />}
-				</BlurView>
-			</TouchableOpacity>
-		);
-	}
-
 	return (
 		<TouchableOpacity
 			onPress={onPress}

@@ -23,7 +23,7 @@ const Onboarding = () => {
             <Swiper ref={swiperRef} showsButtons={false} loop={false}
             accessibilityLabel="Onboarding carousel"
             dot={<View className="w-[32px] h-[4px] mx-1 bg-[#E2E8F0] dark:bg-dark-border rounded-full"/>}
-            activeDot={<View className="w-[32px] h-[4px] mx-1 bg-[#0286FF] rounded-full"/>}
+            activeDot={<View className="w-[32px] h-[4px] mx-1 bg-primary-500 rounded-full"/>}
             onIndexChanged={(index) => setActiveIndex(index)}
             >
                 {onboarding.map((item, idx) => (

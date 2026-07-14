@@ -3,6 +3,7 @@ import { Tabs } from "expo-router";
 import { BlurView } from "expo-blur";
 import { Image, ImageSourcePropType, Platform, View } from "react-native";
 import { useTheme } from "@/lib/ThemeContext";
+import { useTabStore } from "@/store";
 
 const TabIcon = ({
   source,
@@ -27,8 +28,9 @@ const TabIcon = ({
 
 export default function Layout() {
   const { isDark, useLiquidGlass } = useTheme();
+  const tabBarVisible = useTabStore((s) => s.tabBarVisible);
 
-  const tabBarStyle: any = {
+  const tabBarStyle: Record<string, unknown> = {
     backgroundColor: useLiquidGlass ? "transparent" : isDark ? "#1C1C1E" : "#333333",
     borderRadius: 50,
     paddingBottom: 0,
@@ -41,6 +43,8 @@ export default function Layout() {
     alignItems: "center",
     flexDirection: "row",
     position: "absolute",
+    transform: [{ translateY: tabBarVisible ? 0 : 120 }],
+    opacity: tabBarVisible ? 1 : 0,
   };
 
   return (
@@ -49,7 +53,7 @@ export default function Layout() {
       screenOptions={{
         tabBarActiveTintColor: "white",
         tabBarInactiveTintColor: "white",
-        tabBarShowLabel: false,
+        tabBarShowLabel: true,
         tabBarStyle,
         tabBarBackground: useLiquidGlass
           ? () => (

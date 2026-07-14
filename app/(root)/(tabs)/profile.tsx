@@ -169,6 +169,43 @@ const StatCard = ({ label, value, icon, isDark = false }: StatCardProps) => {
   );
 };
 
+// Menu Section (extracted to avoid duplication)
+const MenuSection = ({
+  isDark,
+  useLiquidGlass,
+  themeMode,
+}: {
+  isDark: boolean;
+  useLiquidGlass: boolean;
+  themeMode: string;
+}) => {
+  const menuItems = (
+    <>
+      <MenuRow icon="notifications-outline" label="Notifications" accessibilityHint="View your notifications" onPress={() => router.push("/notifications")} isDark={isDark} />
+      <RowDivider />
+      <MenuRow icon="shield-checkmark-outline" label="Safety Settings" accessibilityHint="Configure safety features" onPress={() => router.push("/safety")} isDark={isDark} />
+      <RowDivider />
+      <MenuRow icon="moon-outline" label="Appearance" badge={themeMode === "system" ? "System" : themeMode === "dark" ? "Dark" : "Light"} accessibilityHint="Choose light, dark, or system appearance" onPress={() => router.push("/appearance")} isDark={isDark} />
+      <RowDivider />
+      <MenuRow icon="pricetags-outline" label="Promotions" badge="2 NEW" accessibilityHint="View available promotions and offers" onPress={() => router.push("/promotions")} isDark={isDark} />
+      <RowDivider />
+      <MenuRow icon="help-circle-outline" label="Help & Support" accessibilityHint="Get help and contact support" onPress={() => router.push("/help")} isDark={isDark} />
+      <RowDivider />
+      <MenuRow icon="document-text-outline" label="Legal & Privacy" accessibilityHint="Review legal agreements and privacy settings" onPress={() => router.push("/legal")} isDark={isDark} />
+    </>
+  );
+
+  if (useLiquidGlass) {
+    return <GlassMenuSection isDark={isDark}>{menuItems}</GlassMenuSection>;
+  }
+
+  return (
+    <View className="mx-5 mt-6 overflow-hidden rounded-2xl border border-slate-200 dark:border-dark-border bg-white dark:bg-dark-card">
+      {menuItems}
+    </View>
+  );
+};
+
 // Main Component
 const Profile = () => {
   const { user } = useUser();
@@ -186,9 +223,9 @@ const Profile = () => {
       })
     : "Unknown";
 
-  const rating = "4.98";
-  const totalTrips = "124";
-  const loyaltyTier = "Gold";
+  const rating = "—";
+  const totalTrips = "—";
+  const loyaltyTier = "—";
 
   const handleSignOut = () => {
     Alert.alert("Log Out", "Are you sure you want to log out?", [
@@ -224,7 +261,7 @@ const Profile = () => {
               Account
             </Text>
             <TouchableOpacity
-              onPress={() => router.push("/(root)/edit-profile" as any)}
+              onPress={() => router.push("/edit-profile")}
               className="h-9 w-9 items-center justify-center rounded-full bg-slate-100 dark:bg-dark-card"
               {...a11yButton("Edit profile", "Change your name, email, and preferences")}
             >
@@ -318,116 +355,28 @@ const Profile = () => {
             <QuickAction
               icon="time-outline"
               label="History"
-              onPress={() => router.push("/(root)/ride-history" as any)}
+              onPress={() => router.push("/ride-history")}
               accessibilityHint="View your ride history"
               isDark={isDark}
             />
             <QuickAction
               icon="card-outline"
               label="Payment"
-              onPress={() => router.push("/(root)/payment" as any)}
+              onPress={() => router.push("/payment")}
               accessibilityHint="Manage payments and pending rides"
               isDark={isDark}
             />
             <QuickAction
               icon="help-circle-outline"
               label="Support"
-              onPress={() => router.push("/(root)/help" as any)}
+              onPress={() => router.push("/help")}
               accessibilityHint="Get help and support"
               isDark={isDark}
             />
           </View>
 
           {/* Menu rows */}
-          {useLiquidGlass ? (
-            <GlassMenuSection isDark={isDark}>
-              <MenuRow
-                icon="shield-checkmark-outline"
-                label="Safety Settings"
-                accessibilityHint="Configure safety features"
-                onPress={() => router.push("/(root)/safety" as any)}
-                isDark={isDark}
-              />
-              <RowDivider />
-              <MenuRow
-                icon="moon-outline"
-                label="Appearance"
-                badge={themeMode === "system" ? "System" : themeMode === "dark" ? "Dark" : "Light"}
-                accessibilityHint="Choose light, dark, or system appearance"
-                onPress={() => router.push("/(root)/appearance" as any)}
-                isDark={isDark}
-              />
-              <RowDivider />
-              <MenuRow
-                icon="pricetags-outline"
-                label="Promotions"
-                badge="2 NEW"
-                accessibilityHint="View available promotions and offers"
-                onPress={() => router.push("/(root)/promotions" as any)}
-                isDark={isDark}
-              />
-              <RowDivider />
-              <MenuRow
-                icon="help-circle-outline"
-                label="Help & Support"
-                accessibilityHint="Get help and contact support"
-                onPress={() => router.push("/(root)/help" as any)}
-                isDark={isDark}
-              />
-              <RowDivider />
-              <MenuRow
-                icon="document-text-outline"
-                label="Legal & Privacy"
-                accessibilityHint="Review legal agreements and privacy settings"
-                onPress={() => router.push("/(root)/legal" as any)}
-                isDark={isDark}
-              />
-            </GlassMenuSection>
-          ) : (
-          <View className="mx-5 mt-6 overflow-hidden rounded-2xl border border-slate-200 dark:border-dark-border bg-white dark:bg-dark-card">
-            <MenuRow
-              icon="shield-checkmark-outline"
-              label="Safety Settings"
-              accessibilityHint="Configure safety features"
-              onPress={() => router.push("/(root)/safety" as any)}
-              isDark={isDark}
-            />
-            <RowDivider />
-            <MenuRow
-              icon="moon-outline"
-              label="Appearance"
-              badge={themeMode === "system" ? "System" : themeMode === "dark" ? "Dark" : "Light"}
-              accessibilityHint="Choose light, dark, or system appearance"
-              onPress={() => router.push("/(root)/appearance" as any)}
-              isDark={isDark}
-            />
-            <RowDivider />
-            <MenuRow
-              icon="pricetags-outline"
-              label="Promotions"
-              badge="2 NEW"
-              accessibilityHint="View available promotions and offers"
-              onPress={() => router.push("/(root)/promotions" as any)}
-              isDark={isDark}
-            />
-            <RowDivider />
-            <MenuRow
-              icon="help-circle-outline"
-              label="Help & Support"
-              accessibilityHint="Get help and contact support"
-              onPress={() => router.push("/(root)/help" as any)}
-              isDark={isDark}
-            />
-            <RowDivider />
-            <MenuRow
-              icon="document-text-outline"
-              label="Legal & Privacy"
-              accessibilityHint="Review legal agreements and privacy settings"
-              onPress={() => router.push("/(root)/legal" as any)}
-              isDark={isDark}
-            />
-          </View>
-          )}
+          <MenuSection isDark={isDark} useLiquidGlass={useLiquidGlass} themeMode={themeMode} />
 
           {/* Log Out button */}
           <View className="mx-5 mt-6">

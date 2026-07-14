@@ -1,15 +1,18 @@
 import { BlurView } from "expo-blur";
 import React from "react";
-import { Platform, View } from "react-native";
+import { View } from "react-native";
+import type { BlurViewProps } from "expo-blur";
 
 import { useTheme } from "@/lib/ThemeContext";
+
+type BlurTint = BlurViewProps["tint"];
 
 interface GlassViewProps {
   children: React.ReactNode;
   className?: string;
   intensity?: number;
-  tint?: "light" | "dark" | "default" | "extraLight" | "regular" | "prominent" | "systemUltraThinMaterial" | "systemThinMaterial" | "systemMaterial" | "systemThickMaterial" | "systemChromeMaterial" | "systemUltraThinMaterialLight" | "systemThinMaterialLight" | "systemMaterialLight" | "systemThickMaterialLight" | "systemChromeMaterialLight" | "systemUltraThinMaterialDark" | "systemThinMaterialDark" | "systemMaterialDark" | "systemThickMaterialDark" | "systemChromeMaterialDark";
-  style?: any;
+  tint?: BlurTint;
+  style?: Record<string, unknown>;
 }
 
 export function GlassView({

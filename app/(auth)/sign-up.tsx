@@ -2,16 +2,18 @@ import CustomButton from "@/components/customButton";
 import InputField from "@/components/inputField";
 import OAuth from "@/components/oAuth";
 import { icons, images } from "@/constants";
-import { useSignUp } from "@clerk/clerk-expo";
+import { useSignUp, useAuth } from "@clerk/clerk-expo";
 import * as Linking from "expo-linking";
 import { Link, router } from "expo-router";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Alert, Image, ScrollView, Text, View } from "react-native";
 import ReactNativeModal from "react-native-modal";
 import { a11yLink, a11yImage } from "@/lib/accessibility";
+import { fetchAPI } from "@/lib/fetch";
 
 const SignUp = () => {
 	const { isLoaded, signUp, setActive } = useSignUp();
+	const { getToken } = useAuth();
 	const verificationStrategy = (process.env.EXPO_PUBLIC_CLERK_EMAIL_VERIFICATION_STRATEGY as
 		| "email_code"
 		| "email_link"
@@ -29,17 +31,54 @@ const SignUp = () => {
 		code: "",
 	});
 
+	const fallbackTried = useRef(false);
+
 	const onSignUpPress = async () => {
 		if (!isLoaded) return;
 
-		// Start sign-up process using email and password provided
+		if (!form.email.trim() || !form.password.trim() || !form.name.trim()) {
+			Alert.alert("Error", "Please fill in all fields.");
+			return;
+		}
+
 		try {
-			await signUp.create({
+			const signUpAttempt = await signUp.create({
 				emailAddress: form.email,
 				password: form.password,
 			});
 
-			if (verificationStrategy === "email_link") {
+			if (signUpAttempt.status === "complete") {
+				await setActive({ session: signUpAttempt.createdSessionId });
+
+				try {
+					const token = await getToken();
+					await fetchAPI("/(api)/user", {
+						method: "POST",
+						body: JSON.stringify({ name: form.name, email: form.email }),
+					}, token);
+				} catch {
+					// DB user creation failed; will be retried on next API call
+				}
+
+				router.replace("/(root)/(tabs)/home");
+				return;
+			}
+
+			await prepareVerification(verificationStrategy);
+		} catch (err) {
+			if (err && typeof err === "object" && "errors" in err && Array.isArray(err.errors)) {
+				const clerkErrors = err.errors as { longMessage?: string }[];
+				Alert.alert("Error", clerkErrors[0]?.longMessage || "An error occurred during sign-up");
+			} else {
+				Alert.alert("Error", "An error occurred during sign-up");
+			}
+		}
+	};
+
+	const prepareVerification = async (strategy: "email_code" | "email_link") => {
+		if (!signUp) return;
+		try {
+			if (strategy === "email_link") {
 				await signUp.prepareEmailAddressVerification({
 					strategy: "email_link",
 					redirectUrl: Linking.createURL("/sign-in"),
@@ -52,28 +91,25 @@ const SignUp = () => {
 				return;
 			}
 
-			// Send user an email with verification code
 			await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-			// Set 'pendingVerification' to true to display second form
-			// and capture OTP code
-			setVerification({
-				...verification,
-				state: "pending",
-			});
-		} catch (err) {
-			if (err && typeof err === "object" && "errors" in err && Array.isArray((err as any).errors)) {
-				const clerkCode = (err as any).errors[0]?.code;
-				if (clerkCode === "strategy_for_user_invalid") {
-					Alert.alert(
-						"Email verification strategy mismatch",
-						"Your Clerk instance does not support this verification strategy. Set Clerk Email Verification Strategy in app config (email_code or email_link) to match your Clerk dashboard.",
-					);
+			setVerification({ ...verification, state: "pending" });
+		} catch (err: any) {
+			const clerkCode = err?.errors?.[0]?.code;
+			if (clerkCode === "strategy_for_user_invalid") {
+				const fallback = strategy === "email_code" ? "email_link" : "email_code";
+				if (!fallbackTried.current) {
+					fallbackTried.current = true;
+					await prepareVerification(fallback);
 					return;
 				}
-				Alert.alert("Error", ((err as any).errors[0]?.longMessage) || "An error occurred during sign-up");
-			} else {
-				Alert.alert("Error", "An error occurred during sign-up");
+				const reloaded = await signUp.reload();
+				if (reloaded.createdSessionId) {
+					await setActive({ session: reloaded.createdSessionId });
+					router.replace("/(root)/(tabs)/home");
+					return;
+				}
 			}
+			throw err;
 		}
 	};
 
@@ -137,11 +173,11 @@ const SignUp = () => {
 						value={form.password}
 						onChangeText={(value) => setForm({ ...form, password: value })}
 					/>
-					<CustomButton
-						title="Sign Up"
-						onPress={onSignUpPress}
-						className="mt-6"
-					/>
+				<CustomButton
+					title="Sign Up"
+					onPress={onSignUpPress}
+					className="mt-6 bg-primary-500"
+				/>
 					<OAuth />
 					<Link
 						href="/sign-in"
@@ -193,10 +229,21 @@ const SignUp = () => {
 						<Text className="text-base text-gray-400 dark:text-dark-text-secondary font-Jakarta text-center mt-2">
 							Your account has been successfully verified.
 						</Text>
-						<CustomButton title="continue"
-						onPress={() => router.push(`/(root)/(tabs)/home`)}
+					<CustomButton title="Continue"
+						onPress={async () => {
+							try {
+								const token = await getToken();
+								await fetchAPI("/(api)/user", {
+									method: "POST",
+									body: JSON.stringify({ name: form.name, email: form.email }),
+								}, token);
+							} catch {
+								// DB user creation failed; will be retried on next API call
+							}
+							router.push(`/(root)/(tabs)/home`);
+						}}
 						className="mt-5"
-						/>
+					/>
 					</View>
 				</ReactNativeModal>
 			</View>

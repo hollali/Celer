@@ -95,6 +95,17 @@ export const onboarding = [
 	},
 ];
 
+export const CURRENCY_SYMBOL = "GH₵";
+
+export const FARE_RATE_PER_MINUTE = 0.5;
+
+export const MAX_MESSAGE_LENGTH = 2000;
+
+export const RATE_LIMIT_MAX = 20;
+export const RATE_LIMIT_WINDOW_MS = 60_000;
+
+export const OSRM_BASE = "https://router.project-osrm.org";
+
 export const data = {
 	onboarding,
 };

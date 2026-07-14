@@ -8,6 +8,8 @@ import { StatusBar } from "react-native";
 import "react-native-reanimated";
 import "./global.css";
 import { ThemeProvider } from "@/lib/ThemeContext";
+import { TokenSync } from "@/components/TokenSync";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 void SplashScreen.preventAutoHideAsync().catch((error) => {
@@ -46,15 +48,18 @@ export default function RootLayout() {
 
 	return (
 		<ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
-			<ClerkLoaded>
-				<ThemeProvider>
-					<StatusBar barStyle="dark-content" />
-					<Stack>
-						<Stack.Screen name="index" options={{ headerShown: false }} />
-						<Stack.Screen name="(root)" options={{ headerShown: false }} />
-						<Stack.Screen name="(auth)" options={{ headerShown: false }} />
-						<Stack.Screen name="+not-found" />
-					</Stack>
+      <ClerkLoaded>
+            <TokenSync />
+            <ThemeProvider>
+					<ErrorBoundary>
+						<StatusBar barStyle="dark-content" />
+						<Stack>
+							<Stack.Screen name="index" options={{ headerShown: false }} />
+							<Stack.Screen name="(root)" options={{ headerShown: false }} />
+							<Stack.Screen name="(auth)" options={{ headerShown: false }} />
+							<Stack.Screen name="+not-found" />
+						</Stack>
+					</ErrorBoundary>
 				</ThemeProvider>
 			</ClerkLoaded>
 		</ClerkProvider>

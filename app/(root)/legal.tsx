@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
-import { ScrollView, Switch, Text, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, Switch, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { a11y, a11yButton, a11ySwitch, a11yHeader } from "@/lib/accessibility";
 import { useTheme } from "@/lib/ThemeContext";
@@ -103,11 +103,11 @@ const Legal = () => {
         </View>
 
         <View className="mt-4 mb-8 rounded-2xl bg-white dark:bg-dark-card border border-slate-100 dark:border-dark-border p-4">
-          <TouchableOpacity className="rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-700/30 py-3 px-4 flex-row items-center justify-between" {...a11yButton("Download my data archive")}>
+          <TouchableOpacity onPress={() => Alert.alert("Coming Soon", "Data download feature coming soon!")} className="rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-700/30 py-3 px-4 flex-row items-center justify-between" {...a11yButton("Download my data archive")}>
             <Text className="font-JakartaMedium text-blue-700 dark:text-blue-400">Download my data archive</Text>
             <Ionicons name="download-outline" size={18} color="#1d4ed8" />
           </TouchableOpacity>
-          <TouchableOpacity className="mt-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-700/30 py-3 px-4 flex-row items-center justify-between" {...a11yButton("Request account deletion")}>
+          <TouchableOpacity onPress={() => Alert.alert("Coming Soon", "Account deletion feature coming soon!")} className="mt-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-700/30 py-3 px-4 flex-row items-center justify-between" {...a11yButton("Request account deletion")}>
             <Text className="font-JakartaMedium text-red-700 dark:text-red-400">Request account deletion</Text>
             <Ionicons name="trash-outline" size={18} color="#b91c1c" />
           </TouchableOpacity>

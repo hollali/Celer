@@ -5,21 +5,22 @@ import { ScrollView, Text, TextInput, TouchableOpacity, View } from "react-nativ
 import { SafeAreaView } from "react-native-safe-area-context";
 import { a11y, a11yButton, a11yHeader } from "@/lib/accessibility";
 import { useTheme } from "@/lib/ThemeContext";
+import { CURRENCY_SYMBOL } from "@/constants";
 
 const promos = [
   {
     id: "1",
     title: "50% OFF your next ride",
     code: "CELER50",
-    expiry: "Expires Mar 30",
+    expiry: "Expires Dec 31",
     savings: 18,
     type: "percent",
   },
   {
     id: "2",
-    title: "Free ride up to GH₵20",
+    title: "Free ride up to 20% off",
     code: "FREERIDE",
-    expiry: "Expires Apr 5",
+    expiry: "Expires Dec 31",
     savings: 20,
     type: "flat",
   },
@@ -27,7 +28,7 @@ const promos = [
     id: "3",
     title: "Airport drop bonus",
     code: "AIRPORT10",
-    expiry: "Expires Apr 12",
+    expiry: "Expires Dec 31",
     savings: 10,
     type: "flat",
   },
@@ -61,7 +62,7 @@ const Promotions = () => {
         <View className="mt-5 rounded-2xl bg-emerald-600 dark:bg-emerald-700 p-4">
           <Text className="text-white font-JakartaBold">Savings Wallet</Text>
           <Text className="text-emerald-100 mt-1 text-xs">Potential savings this month</Text>
-          <Text className="text-white text-2xl mt-1 font-JakartaBold">GH₵{totalSavings.toFixed(2)}</Text>
+          <Text className="text-white text-2xl mt-1 font-JakartaBold">{CURRENCY_SYMBOL}{totalSavings.toFixed(2)}</Text>
           <Text className="text-emerald-100 text-xs mt-1">
             {promos.length} active offers available now.
           </Text>
@@ -117,7 +118,7 @@ const Promotions = () => {
                 Code: <Text className="font-JakartaBold dark:text-dark-text">{promo.code}</Text>
               </Text>
               <Text className="text-emerald-700 dark:text-emerald-400 font-JakartaBold">
-                {promo.type === "percent" ? "Up to GH₵18.00 off" : `GH₵${promo.savings.toFixed(2)} off`}
+                {promo.type === "percent" ? `Up to ${promo.savings}% off` : `Up to ${CURRENCY_SYMBOL}${promo.savings.toFixed(2)} off`}
               </Text>
             </View>
             <TouchableOpacity

@@ -1,8 +1,10 @@
-import { useUser } from "@clerk/clerk-expo";
+import { useUser, useAuth } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   ScrollView,
   Switch,
   Text,
@@ -13,23 +15,53 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { a11y, a11yButton, a11ySwitch, a11yHeader } from "@/lib/accessibility";
 import { useTheme } from "@/lib/ThemeContext";
+import { fetchAPI, useFetch } from "@/lib/fetch";
 
 const vehicles = ["Economy", "Comfort", "SUV", "Bike"];
 
 const EditProfile = () => {
   const { user } = useUser();
   const { isDark } = useTheme();
+  const { getToken, isLoaded } = useAuth();
 
-  const initialName = user?.fullName || "";
-  const initialEmail = user?.primaryEmailAddress?.emailAddress || "";
+  const { data: profileData, loading: profileLoading } = useFetch<{
+    data: {
+      name: string;
+      email: string;
+      phone: string;
+      bio: string;
+      preferred_vehicle: string;
+      marketing_opt_in: boolean;
+      ride_updates: boolean;
+    };
+  }>("/(api)/user", getToken, isLoaded);
 
-  const [name, setName] = useState(initialName);
-  const [email, setEmail] = useState(initialEmail);
-  const [phone, setPhone] = useState("+1 555 182 2234");
-  const [bio, setBio] = useState("Usually rides in the evening.");
+  const profile = profileData?.data;
+
+  const initialName = profile?.name ?? user?.fullName ?? "";
+  const initialEmail = profile?.email ?? user?.primaryEmailAddress?.emailAddress ?? "";
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [bio, setBio] = useState("");
   const [preferredVehicle, setPreferredVehicle] = useState("Economy");
   const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [rideUpdates, setRideUpdates] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [profileLoaded, setProfileLoaded] = useState(false);
+
+  if (profile && !profileLoaded) {
+    setName(profile.name || initialName);
+    setEmail(profile.email || initialEmail);
+    setPhone(profile.phone || "");
+    setBio(profile.bio || "");
+    setPreferredVehicle(profile.preferred_vehicle || "Economy");
+    setMarketingOptIn(profile.marketing_opt_in ?? false);
+    setRideUpdates(profile.ride_updates ?? true);
+    setProfileLoaded(true);
+  }
 
   const initials = useMemo(() => {
     if (!name.trim()) return "U";
@@ -50,34 +82,62 @@ const EditProfile = () => {
   const hasChanges =
     name !== initialName ||
     email !== initialEmail ||
-    phone !== "+1 555 182 2234" ||
-    bio !== "Usually rides in the evening." ||
-    preferredVehicle !== "Economy" ||
-    marketingOptIn !== false ||
-    rideUpdates !== true;
+    phone !== (profile?.phone || "") ||
+    bio !== (profile?.bio || "") ||
+    preferredVehicle !== (profile?.preferred_vehicle || "Economy") ||
+    marketingOptIn !== (profile?.marketing_opt_in ?? false) ||
+    rideUpdates !== (profile?.ride_updates ?? true);
 
   const resetChanges = () => {
     setName(initialName);
     setEmail(initialEmail);
-    setPhone("+1 555 182 2234");
-    setBio("Usually rides in the evening.");
-    setPreferredVehicle("Economy");
-    setMarketingOptIn(false);
-    setRideUpdates(true);
+    setPhone(profile?.phone || "");
+    setBio(profile?.bio || "");
+    setPreferredVehicle(profile?.preferred_vehicle || "Economy");
+    setMarketingOptIn(profile?.marketing_opt_in ?? false);
+    setRideUpdates(profile?.ride_updates ?? true);
   };
 
-  const handleSave = () => {
-    console.log("Updated profile", {
-      name,
-      email,
-      phone,
-      bio,
-      preferredVehicle,
-      marketingOptIn,
-      rideUpdates,
-    });
-    router.back();
+  const handleSave = async () => {
+    if (!hasChanges || saving) return;
+    setSaving(true);
+    try {
+      const token = await getToken();
+      await fetchAPI(
+        "/(api)/user",
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            name,
+            email,
+            phone,
+            bio,
+            preferred_vehicle: preferredVehicle,
+            marketing_opt_in: marketingOptIn,
+            ride_updates: rideUpdates,
+          }),
+        },
+        token
+      );
+      Alert.alert("Profile Updated", "Your profile has been saved.", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
+    } catch {
+      Alert.alert("Error", "Failed to save profile. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (profileLoading && !profileLoaded) {
+    return (
+      <SafeAreaView className="flex-1 bg-slate-50 dark:bg-dark-bg">
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={isDark ? "#818CF8" : "#4F46E5"} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-dark-bg">
@@ -218,13 +278,17 @@ const EditProfile = () => {
 
         <TouchableOpacity
           onPress={handleSave}
-          disabled={!hasChanges}
+          disabled={!hasChanges || saving}
           className={`mt-8 mb-8 rounded-full py-4 items-center ${
-            hasChanges ? "bg-emerald-500" : "bg-slate-300 dark:bg-dark-border"
+            hasChanges && !saving ? "bg-emerald-500" : "bg-slate-300 dark:bg-dark-border"
           }`}
-          {...a11yButton("Save Changes", "Save your profile updates", !hasChanges)}
+          {...a11yButton("Save Changes", "Save your profile updates", !hasChanges || saving)}
         >
-          <Text className="text-white font-JakartaBold">Save Changes</Text>
+          {saving ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text className="text-white font-JakartaBold">Save Changes</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

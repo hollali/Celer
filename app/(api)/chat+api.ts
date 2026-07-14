@@ -1,23 +1,13 @@
 import sql from "@/lib/neon";
+import { authenticateRequest, unauthorizedResponse } from "@/lib/api-auth";
 
 export async function GET(request: Request) {
   try {
+    const user = await authenticateRequest(request);
+    if (!user?.dbUserId) return unauthorizedResponse();
+
     const { searchParams } = new URL(request.url);
-    const userEmail = searchParams.get("user_email");
-
-    if (!userEmail) {
-      return Response.json({ error: "user_email is required" }, { status: 400 });
-    }
-
-    const userResult = await sql`
-      SELECT id FROM users WHERE email = ${userEmail} LIMIT 1;
-    `;
-
-    if (userResult.length === 0) {
-      return Response.json({ data: [] }, { status: 200 });
-    }
-
-    const userId = userResult[0].id;
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50")));
 
     let conversations;
     try {
@@ -71,24 +61,59 @@ export async function GET(request: Request) {
           END AS online
         FROM conversations c
         LEFT JOIN drivers d ON c.driver_id = d.id
-        WHERE c.user_id = ${userId}
+        WHERE c.user_id = ${user.dbUserId}
         ORDER BY c.last_message_at DESC NULLS LAST
-        LIMIT 50;
+        LIMIT ${limit}
       `;
     } catch (dbError: any) {
       if (dbError?.message?.includes("relation") && dbError?.message?.includes("does not exist")) {
-        console.warn("chat+api: conversations table does not exist — run database/migrate.mjs");
         return Response.json({ data: [] }, { status: 200 });
       }
       throw dbError;
     }
 
     return Response.json({ data: conversations }, { status: 200 });
-  } catch (error) {
-    console.error("chat+api error:", error);
-    return Response.json(
-      { error: "Internal Server Error", detail: String(error) },
-      { status: 500 }
-    );
+  } catch {
+    return Response.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const user = await authenticateRequest(request);
+    if (!user?.dbUserId) return unauthorizedResponse();
+
+    const body = await request.json();
+    const { driver_id, is_support, is_safety, is_promo } = body;
+
+    const existing = await sql`
+      SELECT id FROM conversations
+      WHERE user_id = ${user.dbUserId}
+        AND (${is_support || false} = FALSE OR is_support = TRUE)
+        AND (${is_safety || false} = FALSE OR is_safety = TRUE)
+        AND (${is_promo || false} = FALSE OR is_promo = TRUE)
+        AND (${driver_id || null}::int IS NULL OR driver_id = ${driver_id || null})
+      LIMIT 1
+    `;
+
+    if (existing.length > 0) {
+      return Response.json({ data: { id: existing[0].id } }, { status: 200 });
+    }
+
+    const result = await sql`
+      INSERT INTO conversations (user_id, driver_id, is_support, is_safety, is_promo)
+      VALUES (
+        ${user.dbUserId},
+        ${driver_id || null},
+        ${is_support || false},
+        ${is_safety || false},
+        ${is_promo || false}
+      )
+      RETURNING id
+    `;
+
+    return Response.json({ data: result[0] }, { status: 201 });
+  } catch {
+    return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

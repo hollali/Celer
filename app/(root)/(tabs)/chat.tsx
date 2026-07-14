@@ -1,4 +1,4 @@
-import { useUser } from "@clerk/clerk-expo";
+import { useUser, useAuth } from "@clerk/clerk-expo";
 import { colors } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
@@ -6,6 +6,7 @@ import { router } from "expo-router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Platform,
   RefreshControl,
@@ -79,6 +80,7 @@ const ConversationCard = ({ item }: { item: Conversation }) => {
     <TouchableOpacity
       activeOpacity={0.65}
       className="flex-row items-center px-5 py-4 active:bg-black/5 dark:active:bg-white/5"
+      onPress={() => router.push(`/(root)/messages/${item.id}`)}
       {...a11yButton(
         `${item.name}, ${item.role}${hasUnread ? `, ${item.user_unread} unread messages` : ""}`,
         "Open conversation"
@@ -216,39 +218,38 @@ const FilterChip = ({
 const ActiveRideBanner = () => {
   const { isDark, useLiquidGlass } = useTheme();
 
+  const bannerContent = (onPress: () => void) => (
+    <View className="flex-row items-center">
+      <View className="h-12 w-12 rounded-full bg-primary-500 items-center justify-center">
+        <Ionicons name="car-sport-outline" size={22} color="white" />
+      </View>
+      <View className="ml-3 flex-1">
+        <Text className="text-primary-500 dark:text-primary-400 font-JakartaBold text-sm">
+          Active Ride
+        </Text>
+        <Text className="text-secondary-500 dark:text-dark-text-secondary text-[11px] font-Jakarta mt-0.5">
+          Tap to view live trip
+        </Text>
+      </View>
+      <View className="h-8 w-8 rounded-full bg-primary-500/10 dark:bg-primary-500/20 items-center justify-center">
+        <Ionicons name="chevron-forward" size={16} color={colors.primary[500]} />
+      </View>
+    </View>
+  );
+
   if (useLiquidGlass) {
     return (
       <TouchableOpacity
         activeOpacity={0.85}
         style={{ marginHorizontal: 16, marginTop: 16, borderRadius: 20, overflow: "hidden" }}
-        {...a11yButton("Active ride with Marcus T.", "Open live trip chat")}
+        {...a11yButton("Active ride", "Open live trip chat")}
       >
         <BlurView
           intensity={80}
           tint={isDark ? "systemMaterialDark" : "systemThinMaterialLight"}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            padding: 16,
-          }}
+          style={{ flexDirection: "row", alignItems: "center", padding: 16 }}
         >
-          <View className="h-12 w-12 rounded-full bg-primary-500 items-center justify-center">
-            <Ionicons name="car-sport-outline" size={22} color="white" />
-          </View>
-          <View className="ml-3 flex-1">
-            <Text className="text-primary-500 dark:text-primary-400 font-JakartaBold text-sm">
-              Active Ride
-            </Text>
-            <Text className="text-secondary-900 dark:text-dark-text font-JakartaMedium text-[13px] mt-0.5">
-              Marcus T. · ETA 2 min
-            </Text>
-            <Text className="text-secondary-500 dark:text-dark-text-secondary text-[11px] font-Jakarta mt-0.5">
-              Tap to view live trip
-            </Text>
-          </View>
-          <View className="h-8 w-8 rounded-full bg-primary-500/10 dark:bg-primary-500/20 items-center justify-center">
-            <Ionicons name="chevron-forward" size={16} color={colors.primary[500]} />
-          </View>
+          {bannerContent(() => {})}
         </BlurView>
       </TouchableOpacity>
     );
@@ -258,17 +259,9 @@ const ActiveRideBanner = () => {
     <TouchableOpacity
       activeOpacity={0.85}
       className="mx-5 mt-4 rounded-2xl bg-primary-500 p-4 flex-row items-center"
-      {...a11yButton("Active ride with Marcus T.", "Open live trip chat")}
+      {...a11yButton("Active ride", "Open live trip chat")}
     >
-      <View className="h-12 w-12 rounded-full bg-white/20 items-center justify-center">
-        <Ionicons name="car-sport-outline" size={22} color="white" />
-      </View>
-      <View className="ml-3 flex-1">
-        <Text className="text-white font-JakartaBold text-sm">Active Ride</Text>
-        <Text className="text-white/80 font-JakartaMedium text-[13px] mt-0.5">Marcus T. · ETA 2 min</Text>
-        <Text className="text-primary-200 text-[11px] font-Jakarta mt-0.5">Tap to view live trip</Text>
-      </View>
-      <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.6)" />
+      {bannerContent(() => {})}
     </TouchableOpacity>
   );
 };
@@ -322,6 +315,7 @@ const HeaderContent = ({
         )}
       </View>
       <TouchableOpacity
+        onPress={() => Alert.alert("Coming Soon", "New message feature coming soon!")}
         className="h-11 w-11 rounded-full bg-primary-500 items-center justify-center"
         {...a11yButton("New message", "Compose a new message")}
       >
@@ -392,6 +386,7 @@ type ListItem =
 const Chat = () => {
   const { user } = useUser();
   const { isDark, useLiquidGlass } = useTheme();
+  const { getToken, isLoaded } = useAuth();
   const [query, setQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<Filter>("All");
   const listRef = useRef<FlatList>(null);
@@ -402,7 +397,8 @@ const Chat = () => {
     data: conversations,
     loading,
     refetch,
-  } = useFetch<Conversation[]>(`/(api)/chat?user_email=${email}`);
+    error,
+  } = useFetch<Conversation[]>("/(api)/chat", getToken, isLoaded);
 
   const convs = conversations ?? [];
 
@@ -508,6 +504,19 @@ const Chat = () => {
             Loading messages...
           </Text>
         </View>
+      ) : error && !conversations ? (
+        <View className="flex-1 items-center justify-center px-5">
+          <Ionicons name="cloud-offline-outline" size={48} color="#9CA3AF" />
+          <Text className="mt-3 text-base font-JakartaBold text-secondary-900 dark:text-dark-text text-center">
+            Unable to load conversations
+          </Text>
+          <Text className="mt-1 text-sm font-JakartaMedium text-general-200 dark:text-dark-text-secondary text-center">
+            {error}
+          </Text>
+          <TouchableOpacity onPress={refetch} className="mt-4 bg-primary-500 rounded-full px-6 py-3">
+            <Text className="text-sm font-JakartaBold text-white">Retry</Text>
+          </TouchableOpacity>
+        </View>
       ) : (
         <FlatList
           ref={listRef}
@@ -534,7 +543,7 @@ const Chat = () => {
 
       <TouchableOpacity
         activeOpacity={0.85}
-        onPress={() => router.push("/(root)/help" as any)}
+        onPress={() => router.push("/help")}
         className="absolute bottom-8 right-5 h-14 w-14 rounded-full bg-secondary-900 dark:bg-primary-500 items-center justify-center shadow-lg"
         style={{
           shadowColor: "#000",

@@ -1,25 +1,27 @@
-import { Driver, MarkerData } from "@/types/type";
+import { MarkerData } from "@/types/type";
 
-const directionsAPI = process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
+const OSRM_BASE = "https://router.project-osrm.org";
 
 export const generateMarkersFromData = ({
   data,
   userLatitude,
   userLongitude,
 }: {
-  data: Driver[];
+  data: MarkerData[];
   userLatitude: number;
   userLongitude: number;
 }): MarkerData[] => {
-  return data.map((driver) => {
-    const latOffset = (Math.random() - 0.5) * 0.01;
-    const lngOffset = (Math.random() - 0.5) * 0.01;
+  return data.map((driver, index) => {
+    const angle = (index * 2 * Math.PI) / data.length;
+    const radius = 0.003 + (index % 3) * 0.001;
+    const latOffset = Math.cos(angle) * radius;
+    const lngOffset = Math.sin(angle) * radius;
 
     return {
+      ...driver,
       latitude: userLatitude + latOffset,
       longitude: userLongitude + lngOffset,
       title: `${driver.first_name} ${driver.last_name}`,
-      ...driver,
     };
   });
 };
@@ -37,10 +39,9 @@ export const calculateRegion = ({
 }) => {
   if (!userLatitude || !userLongitude) {
     return {
-      latitude: 37.78825,
-      longitude: -122.4324,
-      latitudeDelta: 0.01,
-      longitudeDelta: 0.01,
+      latitude: 5.6037,
+      longitude: -0.1870,
+      zoomLevel: 12,
     };
   }
 
@@ -48,27 +49,27 @@ export const calculateRegion = ({
     return {
       latitude: userLatitude,
       longitude: userLongitude,
-      latitudeDelta: 0.01,
-      longitudeDelta: 0.01,
+      zoomLevel: 14,
     };
   }
-
-  const minLat = Math.min(userLatitude, destinationLatitude);
-  const maxLat = Math.max(userLatitude, destinationLatitude);
-  const minLng = Math.min(userLongitude, destinationLongitude);
-  const maxLng = Math.max(userLongitude, destinationLongitude);
-
-  const latitudeDelta = (maxLat - minLat) * 1.3;
-  const longitudeDelta = (maxLng - minLng) * 1.3;
 
   const latitude = (userLatitude + destinationLatitude) / 2;
   const longitude = (userLongitude + destinationLongitude) / 2;
 
+  const latDelta = Math.abs(userLatitude - destinationLatitude);
+  const lngDelta = Math.abs(userLongitude - destinationLongitude);
+  const maxDelta = Math.max(latDelta, lngDelta);
+
+  let zoomLevel = 14;
+  if (maxDelta > 0.5) zoomLevel = 10;
+  else if (maxDelta > 0.2) zoomLevel = 11;
+  else if (maxDelta > 0.1) zoomLevel = 12;
+  else if (maxDelta > 0.05) zoomLevel = 13;
+
   return {
     latitude,
     longitude,
-    latitudeDelta,
-    longitudeDelta,
+    zoomLevel,
   };
 };
 
@@ -93,29 +94,49 @@ export const calculateDriverTimes = async ({
   )
     return;
 
+  const userToDestUrl = `${OSRM_BASE}/route/v1/driving/${userLongitude},${userLatitude};${destinationLongitude},${destinationLatitude}?overview=false`;
+
+  let timeToDestination: number | null = null;
   try {
-    const timesPromises = markers.map(async (marker) => {
+    const res = await fetch(userToDestUrl);
+    const data = await res.json();
+    timeToDestination = data.routes?.[0]?.duration
+      ? data.routes[0].duration / 60
+      : null;
+  } catch {
+    // fallback will be used per-driver
+  }
+
+  const timesPromises = markers.map(async (marker, index) => {
+    try {
       const responseToUser = await fetch(
-        `https://maps.googleapis.com/maps/api/directions/json?origin=${marker.latitude},${marker.longitude}&destination=${userLatitude},${userLongitude}&key=${directionsAPI}`
+        `${OSRM_BASE}/route/v1/driving/${marker.longitude},${marker.latitude};${userLongitude},${userLatitude}?overview=false`
       );
       const dataToUser = await responseToUser.json();
-      const timeToUser = dataToUser.routes[0].legs[0].duration.value;
+      const timeToUser = dataToUser.routes?.[0]?.duration
+        ? dataToUser.routes[0].duration / 60
+        : null;
 
-      const responseToDestination = await fetch(
-        `https://maps.googleapis.com/maps/api/directions/json?origin=${userLatitude},${userLongitude}&destination=${destinationLatitude},${destinationLongitude}&key=${directionsAPI}`
-      );
-      const dataToDestination = await responseToDestination.json();
-      const timeToDestination =
-        dataToDestination.routes[0].legs[0].duration.value;
+      if (timeToUser !== null && timeToDestination !== null) {
+        const totalTime = timeToUser + timeToDestination;
+        const price = (totalTime * 0.5).toFixed(2);
+        return { ...marker, time: totalTime, price };
+      }
 
-      const totalTime = (timeToUser + timeToDestination) / 60;
-      const price = (totalTime * 0.5).toFixed(2);
+      if (timeToUser !== null) {
+        const totalTime = timeToUser + 10;
+        const price = (totalTime * 0.5).toFixed(2);
+        return { ...marker, time: totalTime, price };
+      }
+    } catch {
+      // OSRM call failed for this driver
+    }
 
-      return { ...marker, time: totalTime, price };
-    });
+    // Fallback: estimate based on driver index
+    const fallbackTime = 5 + index * 2;
+    const fallbackPrice = (fallbackTime * 0.5).toFixed(2);
+    return { ...marker, time: fallbackTime, price: fallbackPrice };
+  });
 
-    return await Promise.all(timesPromises);
-  } catch (error) {
-    console.error("Error calculating driver times:", error);
-  }
+  return await Promise.all(timesPromises);
 };
