@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { action, reference, rideData } = body;
+    const { action, reference, rideData, phone, provider } = body;
 
     if (action === "initialize") {
       const rideId = rideData?.ride_id;
@@ -142,10 +142,95 @@ export async function POST(request: Request) {
       }, { status: 200 });
     }
 
+    if (action === "initialize_momo") {
+      const rideId = rideData?.ride_id;
+      if (!rideId) {
+        return Response.json({ error: "Missing ride_id" }, { status: 400 });
+      }
+      if (!user.dbUserId) {
+        return Response.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      return initializeMomo(user as { dbUserId: number; clerkId: string; email: string }, rideId, phone, provider);
+    }
+
     return Response.json({ error: "Invalid action" }, { status: 400 });
   } catch {
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
+}
+
+async function initializeMomo(
+  user: { dbUserId: number; clerkId: string; email: string },
+  rideId: number,
+  phone: string,
+  provider: string
+) {
+  if (!paystackSecretKey) {
+    return Response.json({ error: "Payment not configured" }, { status: 503 });
+  }
+
+  if (!phone || !provider) {
+    return Response.json({ error: "Phone number and provider are required" }, { status: 400 });
+  }
+
+  const validProviders = ["mtn", "vodafone", "airteltigo"];
+  if (!validProviders.includes(provider.toLowerCase())) {
+    return Response.json({ error: "Invalid provider. Use mtn, vodafone, or airteltigo" }, { status: 400 });
+  }
+
+  const rides = await sql`
+    SELECT ride_id, fare_price FROM rides
+    WHERE ride_id = ${rideId} AND user_id = ${user.dbUserId}
+    LIMIT 1
+  `;
+  if (rides.length === 0) {
+    return Response.json({ error: "Ride not found" }, { status: 404 });
+  }
+
+  const dbAmount = Number(rides[0].fare_price);
+
+  const response = await fetch(`${PAYSTACK_API}/transaction/initialize`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${paystackSecretKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      amount: String(Math.round(dbAmount * 100)),
+      email: user.email,
+      metadata: { ride_id: rideId, clerk_id: user.clerkId, phone, provider },
+      channels: ["mobile_money"],
+      mobile_money: {
+        phone,
+        provider: provider.toUpperCase(),
+      },
+      callback_url: "celer://payment/callback",
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!data.status) {
+    return Response.json(
+      { error: data.message || "Paystack MoMo initialization failed" },
+      { status: 400 }
+    );
+  }
+
+  try {
+    await sql`
+      INSERT INTO paystack_transactions (reference, ride_id, user_id, amount, status)
+      VALUES (${data.data.reference}, ${rideId}, ${user.dbUserId}, ${Math.round(dbAmount * 100)}, 'pending')
+    `;
+  } catch {
+    // Reference may already exist (idempotent)
+  }
+
+  return Response.json({
+    authorization_url: data.data.authorization_url,
+    reference: data.data.reference,
+    access_code: data.data.access_code,
+  }, { status: 200 });
 }
 
 async function handleWebhook(request: Request) {
@@ -165,7 +250,10 @@ async function handleWebhook(request: Request) {
     .update(body)
     .digest("hex");
 
-  if (hash !== signature) {
+  const sigBuf = Buffer.from(signature, "hex");
+  const hashBuf = Buffer.from(hash, "hex");
+
+  if (sigBuf.length !== hashBuf.length || !crypto.timingSafeEqual(sigBuf, hashBuf)) {
     return Response.json({ error: "Invalid signature" }, { status: 400 });
   }
 
@@ -184,9 +272,15 @@ async function handleWebhook(request: Request) {
     }
 
     const txRecord = await sql`
-      SELECT ride_id FROM paystack_transactions WHERE reference = ${reference} LIMIT 1
+      SELECT ride_id, amount FROM paystack_transactions WHERE reference = ${reference} LIMIT 1
     `;
     const rideId = txRecord[0]?.ride_id;
+    const expectedAmount = txRecord[0]?.amount;
+
+    if (expectedAmount && event.data.amount !== expectedAmount) {
+      console.log(`Paystack webhook amount mismatch: expected ${expectedAmount}, got ${event.data.amount}`);
+      return Response.json({ error: "Amount mismatch" }, { status: 400 });
+    }
 
     if (rideId) {
       await sql`

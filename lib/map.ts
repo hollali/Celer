@@ -1,6 +1,5 @@
 import { MarkerData } from "@/types/type";
-
-const OSRM_BASE = "https://router.project-osrm.org";
+import { FARE_RATE_PER_MINUTE, OSRM_BASE } from "@/constants";
 
 export const generateMarkersFromData = ({
   data,
@@ -119,13 +118,13 @@ export const calculateDriverTimes = async ({
 
       if (timeToUser !== null && timeToDestination !== null) {
         const totalTime = timeToUser + timeToDestination;
-        const price = (totalTime * 0.5).toFixed(2);
+        const price = (totalTime * FARE_RATE_PER_MINUTE).toFixed(2);
         return { ...marker, time: totalTime, price };
       }
 
       if (timeToUser !== null) {
         const totalTime = timeToUser + 10;
-        const price = (totalTime * 0.5).toFixed(2);
+        const price = (totalTime * FARE_RATE_PER_MINUTE).toFixed(2);
         return { ...marker, time: totalTime, price };
       }
     } catch {
@@ -134,7 +133,7 @@ export const calculateDriverTimes = async ({
 
     // Fallback: estimate based on driver index
     const fallbackTime = 5 + index * 2;
-    const fallbackPrice = (fallbackTime * 0.5).toFixed(2);
+    const fallbackPrice = (fallbackTime * FARE_RATE_PER_MINUTE).toFixed(2);
     return { ...marker, time: fallbackTime, price: fallbackPrice };
   });
 

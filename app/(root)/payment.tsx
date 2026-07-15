@@ -9,6 +9,7 @@ import {
   RefreshControl,
   ScrollView,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -22,7 +23,8 @@ import { Ride } from "@/types/type";
 import { a11y, a11yButton, a11yHeader } from "@/lib/accessibility";
 import { useTheme } from "@/lib/ThemeContext";
 
-type PaymentMethod = "paystack" | "cash";
+type PaymentMethod = "paystack" | "momo" | "cash";
+type MoMoProvider = "mtn" | "vodafone" | "airteltigo";
 
 const Payment = () => {
   const { user } = useUser();
@@ -35,6 +37,9 @@ const Payment = () => {
   const [ride, setRide] = useState<Ride | null>(null);
   const [processing, setProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("paystack");
+  const [paymentFailed, setPaymentFailed] = useState(false);
+  const [momoPhone, setMomoPhone] = useState("");
+  const [momoProvider, setMomoProvider] = useState<MoMoProvider>("mtn");
 
   useEffect(() => {
     if (rideData) {
@@ -64,6 +69,7 @@ const Payment = () => {
     }
 
     setProcessing(true);
+    setPaymentFailed(false);
 
     try {
       const token = await getToken();
@@ -71,13 +77,13 @@ const Payment = () => {
         method: "POST",
         body: JSON.stringify({
           action: "initialize",
-          amount: Number(selectedRide.fare_price),
           rideData: { ride_id: selectedRide.ride_id },
         }),
       }, token);
 
       if (!initResult.authorization_url) {
         Alert.alert("Error", initResult.error || "Failed to initialize payment");
+        setPaymentFailed(true);
         setProcessing(false);
         return;
       }
@@ -94,6 +100,7 @@ const Payment = () => {
 
         if (!reference) {
           Alert.alert("Error", "Payment reference not found. Please try again.");
+          setPaymentFailed(true);
           setProcessing(false);
           return;
         }
@@ -106,6 +113,7 @@ const Payment = () => {
         if (verifyResult.verified) {
           const success = await markAsPaid(selectedRide.ride_id);
           if (success) {
+            setPaymentFailed(false);
             Alert.alert("Payment successful", "Thank you for your payment!", [
               {
                 text: "OK",
@@ -118,12 +126,15 @@ const Payment = () => {
             "Payment failed",
             verifyResult.error || "Could not verify payment"
           );
+          setPaymentFailed(true);
         }
       } else {
         Alert.alert("Payment cancelled", "You cancelled the payment");
+        setPaymentFailed(true);
       }
     } catch {
       Alert.alert("Error", "Something went wrong. Please try again.");
+      setPaymentFailed(true);
     } finally {
       setProcessing(false);
     }
@@ -160,6 +171,91 @@ const Payment = () => {
     );
   };
 
+  const handlePayWithMomo = async () => {
+    if (!selectedRide) {
+      Alert.alert("Error", "No ride selected for payment");
+      return;
+    }
+    const cleanPhone = momoPhone.replace(/\s/g, "");
+    if (!cleanPhone || cleanPhone.length < 10) {
+      Alert.alert("Error", "Please enter a valid phone number");
+      return;
+    }
+
+    setProcessing(true);
+    setPaymentFailed(false);
+
+    try {
+      const token = await getToken();
+      const initResult = await fetchAPI("/(api)/paystack", {
+        method: "POST",
+        body: JSON.stringify({
+          action: "initialize_momo",
+          rideData: { ride_id: selectedRide.ride_id },
+          phone: cleanPhone,
+          provider: momoProvider,
+        }),
+      }, token);
+
+      if (!initResult.authorization_url) {
+        Alert.alert("Error", initResult.error || "Failed to initialize Mobile Money payment");
+        setPaymentFailed(true);
+        setProcessing(false);
+        return;
+      }
+
+      const result = await WebBrowser.openAuthSessionAsync(
+        initResult.authorization_url,
+        "celer://payment/callback"
+      );
+
+      if (result.type === "success") {
+        const url = new URL(result.url);
+        const reference =
+          url.searchParams.get("reference") || initResult.reference;
+
+        if (!reference) {
+          Alert.alert("Error", "Payment reference not found. Please try again.");
+          setPaymentFailed(true);
+          setProcessing(false);
+          return;
+        }
+
+        const verifyResult = await fetchAPI("/(api)/paystack", {
+          method: "POST",
+          body: JSON.stringify({ action: "verify", reference }),
+        }, token);
+
+        if (verifyResult.verified) {
+          const success = await markAsPaid(selectedRide.ride_id);
+          if (success) {
+            setPaymentFailed(false);
+            Alert.alert("Payment successful", "Thank you for your Mobile Money payment!", [
+              {
+                text: "OK",
+                onPress: () => router.replace("/(root)/(tabs)/rides"),
+              },
+            ]);
+          }
+        } else {
+          Alert.alert(
+            "Payment failed",
+            verifyResult.error || "Could not verify payment"
+          );
+          setPaymentFailed(true);
+        }
+      } else {
+        Alert.alert("Payment cancelled", "You cancelled the payment");
+        setPaymentFailed(true);
+      }
+    } catch {
+      Alert.alert("Error", "Something went wrong. Please try again.");
+      setPaymentFailed(true);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const markAsPaid = async (rideId: number): Promise<boolean> => {
     try {
       const token = await getToken();
@@ -180,6 +276,30 @@ const Payment = () => {
       Alert.alert("Error", "Failed to update ride status. Please contact support.");
       return false;
     }
+  };
+
+  const handleCancelRide = () => {
+    if (!selectedRide) return;
+    Alert.alert("Cancel Ride", "Are you sure you want to cancel this ride?", [
+      { text: "No", style: "cancel" },
+      {
+        text: "Yes, Cancel",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            const token = await getToken();
+            await fetchAPI(`/(api)/ride?ride_id=${selectedRide.ride_id}`, {
+              method: "DELETE",
+            }, token);
+            Alert.alert("Ride Canceled", "Your ride has been canceled.", [
+              { text: "OK", onPress: () => router.replace("/(root)/(tabs)/rides") },
+            ]);
+          } catch {
+            Alert.alert("Error", "Failed to cancel ride. Please try again.");
+          }
+        },
+      },
+    ]);
   };
 
   return (
@@ -330,49 +450,120 @@ const Payment = () => {
           Payment method
         </Text>
 
-        <View className="flex-row gap-3">
+        <View className="flex-row gap-2">
           <TouchableOpacity
             onPress={() => setPaymentMethod("paystack")}
             activeOpacity={0.7}
-            className={`flex-1 rounded-2xl border p-4 items-center ${
+            className={`flex-1 rounded-2xl border p-3 items-center ${
               paymentMethod === "paystack"
                 ? "bg-primary-100 dark:bg-primary-900/30 border-primary-500"
                 : "bg-white dark:bg-dark-card border-slate-200 dark:border-dark-border"
             }`}
             {...a11yButton("Paystack", "Pay online with Paystack", false, paymentMethod === "paystack")}
           >
-            <View className={`h-12 w-12 rounded-full items-center justify-center ${paymentMethod === "paystack" ? "bg-primary-500" : "bg-slate-100 dark:bg-dark-bg"}`}>
-              <Ionicons name="card-outline" size={22} color={paymentMethod === "paystack" ? "#FFFFFF" : isDark ? "#F5F5F7" : "#0F172A"} />
+            <View className={`h-10 w-10 rounded-full items-center justify-center ${paymentMethod === "paystack" ? "bg-primary-500" : "bg-slate-100 dark:bg-dark-bg"}`}>
+              <Ionicons name="card-outline" size={20} color={paymentMethod === "paystack" ? "#FFFFFF" : isDark ? "#F5F5F7" : "#0F172A"} />
             </View>
-            <Text className={`mt-2 text-sm font-JakartaSemiBold ${paymentMethod === "paystack" ? "text-primary-700 dark:text-primary-300" : "text-slate-900 dark:text-dark-text"}`}>
+            <Text className={`mt-2 text-xs font-JakartaSemiBold ${paymentMethod === "paystack" ? "text-primary-700 dark:text-primary-300" : "text-slate-900 dark:text-dark-text"}`}>
               Paystack
             </Text>
-            <Text className={`text-xs font-JakartaMedium mt-0.5 ${paymentMethod === "paystack" ? "text-primary-600 dark:text-primary-400" : "text-slate-500 dark:text-dark-text-secondary"}`}>
-              Pay online
+            <Text className={`text-[10px] font-JakartaMedium mt-0.5 ${paymentMethod === "paystack" ? "text-primary-600 dark:text-primary-400" : "text-slate-500 dark:text-dark-text-secondary"}`}>
+              Card
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setPaymentMethod("momo")}
+            activeOpacity={0.7}
+            className={`flex-1 rounded-2xl border p-3 items-center ${
+              paymentMethod === "momo"
+                ? "bg-primary-100 dark:bg-primary-900/30 border-primary-500"
+                : "bg-white dark:bg-dark-card border-slate-200 dark:border-dark-border"
+            }`}
+            {...a11yButton("Mobile Money", "Pay with MTN MoMo, Vodafone, or AirtelTigo", false, paymentMethod === "momo")}
+          >
+            <View className={`h-10 w-10 rounded-full items-center justify-center ${paymentMethod === "momo" ? "bg-primary-500" : "bg-slate-100 dark:bg-dark-bg"}`}>
+              <Ionicons name="phone-portrait-outline" size={20} color={paymentMethod === "momo" ? "#FFFFFF" : isDark ? "#F5F5F7" : "#0F172A"} />
+            </View>
+            <Text className={`mt-2 text-xs font-JakartaSemiBold ${paymentMethod === "momo" ? "text-primary-700 dark:text-primary-300" : "text-slate-900 dark:text-dark-text"}`}>
+              MoMo
+            </Text>
+            <Text className={`text-[10px] font-JakartaMedium mt-0.5 ${paymentMethod === "momo" ? "text-primary-600 dark:text-primary-400" : "text-slate-500 dark:text-dark-text-secondary"}`}>
+              Mobile
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => setPaymentMethod("cash")}
             activeOpacity={0.7}
-            className={`flex-1 rounded-2xl border p-4 items-center ${
+            className={`flex-1 rounded-2xl border p-3 items-center ${
               paymentMethod === "cash"
                 ? "bg-primary-100 dark:bg-primary-900/30 border-primary-500"
                 : "bg-white dark:bg-dark-card border-slate-200 dark:border-dark-border"
             }`}
             {...a11yButton("Cash", "Pay the driver directly with cash", false, paymentMethod === "cash")}
           >
-            <View className={`h-12 w-12 rounded-full items-center justify-center ${paymentMethod === "cash" ? "bg-primary-500" : "bg-slate-100 dark:bg-dark-bg"}`}>
-              <Ionicons name="cash-outline" size={22} color={paymentMethod === "cash" ? "#FFFFFF" : isDark ? "#F5F5F7" : "#0F172A"} />
+            <View className={`h-10 w-10 rounded-full items-center justify-center ${paymentMethod === "cash" ? "bg-primary-500" : "bg-slate-100 dark:bg-dark-bg"}`}>
+              <Ionicons name="cash-outline" size={20} color={paymentMethod === "cash" ? "#FFFFFF" : isDark ? "#F5F5F7" : "#0F172A"} />
             </View>
-            <Text className={`mt-2 text-sm font-JakartaSemiBold ${paymentMethod === "cash" ? "text-primary-700 dark:text-primary-300" : "text-slate-900 dark:text-dark-text"}`}>
+            <Text className={`mt-2 text-xs font-JakartaSemiBold ${paymentMethod === "cash" ? "text-primary-700 dark:text-primary-300" : "text-slate-900 dark:text-dark-text"}`}>
               Cash
             </Text>
-            <Text className={`text-xs font-JakartaMedium mt-0.5 ${paymentMethod === "cash" ? "text-primary-600 dark:text-primary-400" : "text-slate-500 dark:text-dark-text-secondary"}`}>
-              Pay driver
+            <Text className={`text-[10px] font-JakartaMedium mt-0.5 ${paymentMethod === "cash" ? "text-primary-600 dark:text-primary-400" : "text-slate-500 dark:text-dark-text-secondary"}`}>
+              Driver
             </Text>
           </TouchableOpacity>
         </View>
+
+        {/* MoMo phone input */}
+        {paymentMethod === "momo" && selectedRide && (
+          <View className="mt-4 rounded-2xl bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4">
+            <Text className="text-sm font-JakartaBold text-slate-400 dark:text-dark-text-secondary uppercase tracking-wider mb-3">
+              Mobile Money
+            </Text>
+
+            {/* Provider selector */}
+            <View className="flex-row gap-2 mb-3">
+              {(["mtn", "vodafone", "airteltigo"] as MoMoProvider[]).map((p) => (
+                <TouchableOpacity
+                  key={p}
+                  onPress={() => setMomoProvider(p)}
+                  activeOpacity={0.7}
+                  className={`flex-1 rounded-xl border py-2 px-3 items-center ${
+                    momoProvider === p
+                      ? "bg-primary-100 dark:bg-primary-900/30 border-primary-500"
+                      : "bg-slate-50 dark:bg-dark-bg border-slate-200 dark:border-dark-border"
+                  }`}
+                >
+                  <Text className={`text-xs font-JakartaSemiBold capitalize ${
+                    momoProvider === p ? "text-primary-700 dark:text-primary-300" : "text-slate-600 dark:text-dark-text-secondary"
+                  }`}>
+                    {p === "airteltigo" ? "AT" : p}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Phone input */}
+            <View className="flex-row items-center bg-slate-50 dark:bg-dark-bg rounded-xl border border-slate-200 dark:border-dark-border px-3">
+              <Text className="text-sm font-JakartaMedium text-slate-500 dark:text-dark-text-secondary mr-2">
+                +233
+              </Text>
+              <TextInput
+                className="flex-1 py-3 text-sm font-JakartaMedium text-slate-900 dark:text-dark-text"
+                placeholder="Mobile number"
+                placeholderTextColor={isDark ? "#6B7280" : "#9CA3AF"}
+                keyboardType="phone-pad"
+                value={momoPhone}
+                onChangeText={setMomoPhone}
+                maxLength={10}
+              />
+            </View>
+            <Text className="text-xs text-slate-400 dark:text-dark-text-tertiary mt-2">
+              You'll receive a prompt on your phone to confirm
+            </Text>
+          </View>
+        )}
 
         {/* Pay button */}
         {selectedRide && (
@@ -380,15 +571,43 @@ const Payment = () => {
             {paymentMethod === "paystack" ? (
               <>
                 <CustomButton
-                  title={processing ? "Processing..." : `Pay ${CURRENCY_SYMBOL}${selectedRide.fare_price} with Paystack`}
+                  title={processing ? "Processing..." : paymentFailed ? `Retry Pay ${CURRENCY_SYMBOL}${selectedRide.fare_price}` : `Pay ${CURRENCY_SYMBOL}${selectedRide.fare_price} with Paystack`}
                   onPress={handlePayWithPaystack}
                   disabled={processing}
                 />
                 {processing && (
                   <ActivityIndicator size="small" color="#0286FF" className="mt-2" />
                 )}
+                {paymentFailed && (
+                  <TouchableOpacity onPress={handleCancelRide} className="mt-3 items-center">
+                    <Text className="text-sm font-JakartaMedium text-slate-500 dark:text-dark-text-secondary">
+                      Cancel this ride instead
+                    </Text>
+                  </TouchableOpacity>
+                )}
                 <Text className="text-xs text-slate-400 dark:text-dark-text-tertiary text-center mt-2">
                   Secure payments powered by Paystack
+                </Text>
+              </>
+            ) : paymentMethod === "momo" ? (
+              <>
+                <CustomButton
+                  title={processing ? "Processing..." : paymentFailed ? `Retry Pay ${CURRENCY_SYMBOL}${selectedRide.fare_price}` : `Pay ${CURRENCY_SYMBOL}${selectedRide.fare_price} with MoMo`}
+                  onPress={handlePayWithMomo}
+                  disabled={processing || !momoPhone || momoPhone.length < 10}
+                />
+                {processing && (
+                  <ActivityIndicator size="small" color="#0286FF" className="mt-2" />
+                )}
+                {paymentFailed && (
+                  <TouchableOpacity onPress={handleCancelRide} className="mt-3 items-center">
+                    <Text className="text-sm font-JakartaMedium text-slate-500 dark:text-dark-text-secondary">
+                      Cancel this ride instead
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                <Text className="text-xs text-slate-400 dark:text-dark-text-tertiary text-center mt-2">
+                  MTN, Vodafone & AirtelTigo supported
                 </Text>
               </>
             ) : (

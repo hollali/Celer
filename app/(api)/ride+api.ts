@@ -1,7 +1,7 @@
 import sql from "@/lib/neon";
 import { authenticateRequest, unauthorizedResponse } from "@/lib/api-auth";
+import { FARE_RATE_PER_MINUTE } from "@/constants";
 
-const FARE_RATE_PER_MINUTE = 0.5;
 const VALID_PAYMENT_STATUSES = ["pending", "paid", "failed", "refunded"] as const;
 const VALID_RIDE_STATUSES = ["requested", "accepted", "in_progress", "completed", "canceled"] as const;
 
@@ -9,6 +9,16 @@ export async function GET(request: Request) {
   try {
     const user = await authenticateRequest(request);
     if (!user?.dbUserId) return unauthorizedResponse();
+
+    // Auto-expire pending rides older than 30 minutes
+    await sql`
+      UPDATE rides
+      SET ride_status = 'canceled', payment_status = 'failed', cancelled_at = NOW()
+      WHERE user_id = ${user.dbUserId}
+        AND ride_status = 'requested'
+        AND payment_status = 'pending'
+        AND created_at < NOW() - INTERVAL '30 minutes'
+    `;
 
     const { searchParams } = new URL(request.url);
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));

@@ -22,6 +22,7 @@ import PlaceInput from "@/components/PlaceInput";
 import Map from "@/components/Map";
 import { icons, CURRENCY_SYMBOL } from "@/constants";
 import { fetchAPI } from "@/lib/fetch";
+import { calculateDriverTimes } from "@/lib/map";
 import { useLocationStore, useDriverStore, useTabStore } from "@/store";
 import { useTheme } from "@/lib/ThemeContext";
 import { a11y, a11yButton, a11yImage } from "@/lib/accessibility";
@@ -93,10 +94,31 @@ const Home = () => {
     setLoadingDrivers(true);
     try {
       const token = await getToken();
-      const data = await fetchAPI("/(api)/driver", undefined, token);
+      const userLat = useLocationStore.getState().userLatitude || 0;
+      const userLng = useLocationStore.getState().userLongitude || 0;
+
+      const params = new URLSearchParams();
+      if (userLat && userLng) {
+        params.set("lat", String(userLat));
+        params.set("lng", String(userLng));
+      }
+      const query = params.toString();
+      const url = `/(api)/driver${query ? `?${query}` : ""}`;
+
+      const data = await fetchAPI(url, undefined, token);
       if (data?.data?.length > 0) {
-        setDrivers(data.data);
-        setSelectedDriver(data.data[0].id);
+        const destLat = useLocationStore.getState().destinationLatitude;
+        const destLng = useLocationStore.getState().destinationLongitude;
+        const driversWithTimes = await calculateDriverTimes({
+          markers: data.data,
+          userLatitude: userLat || null,
+          userLongitude: userLng || null,
+          destinationLatitude: destLat || location.latitude,
+          destinationLongitude: destLng || location.longitude,
+        });
+        const list = driversWithTimes || data.data;
+        setDrivers(list);
+        setSelectedDriver(list[Math.floor(Math.random() * list.length)].id);
       } else {
         setDriverError("No drivers available in your area");
       }
@@ -119,10 +141,29 @@ const Home = () => {
     try {
       setLoadingDrivers(true);
       const token = await getToken();
-      const data = await fetchAPI("/(api)/driver", undefined, token);
+      const userLat = useLocationStore.getState().userLatitude || 0;
+      const userLng = useLocationStore.getState().userLongitude || 0;
+
+      const params = new URLSearchParams();
+      if (userLat && userLng) {
+        params.set("lat", String(userLat));
+        params.set("lng", String(userLng));
+      }
+      const query = params.toString();
+      const url = `/(api)/driver${query ? `?${query}` : ""}`;
+
+      const data = await fetchAPI(url, undefined, token);
       if (data?.data?.length > 0) {
-        setDrivers(data.data);
-        setSelectedDriver(data.data[0].id);
+        const driversWithTimes = await calculateDriverTimes({
+          markers: data.data,
+          userLatitude: userLat || null,
+          userLongitude: userLng || null,
+          destinationLatitude: location.latitude,
+          destinationLongitude: location.longitude,
+        });
+        const list = driversWithTimes || data.data;
+        setDrivers(list);
+        setSelectedDriver(list[Math.floor(Math.random() * list.length)].id);
       } else {
         setDriverError("No drivers available in your area");
       }
@@ -143,7 +184,7 @@ const Home = () => {
     setBookingRide(true);
     try {
       const token = await getToken();
-      await fetchAPI("/(api)/ride", {
+      const newRide = await fetchAPI("/(api)/ride", {
         method: "POST",
         body: JSON.stringify({
           origin_address: originAddress,
@@ -153,17 +194,22 @@ const Home = () => {
           destination_latitude: useLocationStore.getState().destinationLatitude,
           destination_longitude: useLocationStore.getState().destinationLongitude,
           ride_time: Math.round(driver.time || 0),
-          fare_price: parseFloat(driver.price || "0"),
           payment_status: "pending",
           driver_id: driver.id,
         }),
       }, token);
+
+      setRideRequested(false);
+      clearSelectedDriver();
+      setDestinationLocation({ latitude: 0, longitude: 0, address: "" });
+
+      const rideData = newRide?.data?.[0] || newRide?.data;
       Alert.alert("Ride Booked", "Your driver is on the way! Pay after you arrive.", [
-        { text: "OK", onPress: () => {
-          setRideRequested(false);
-          clearSelectedDriver();
-          setDestinationLocation({ latitude: 0, longitude: 0, address: "" });
-        }},
+        {
+          text: "Pay Now",
+          onPress: () => router.push(`/(root)/payment?rideData=${encodeURIComponent(JSON.stringify(rideData))}`),
+        },
+        { text: "Pay Later", style: "cancel" },
       ]);
     } catch (e) {
       Alert.alert("Booking Failed", "Could not book ride. Please check your connection and try again.", [
