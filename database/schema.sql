@@ -22,9 +22,10 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE INDEX IF NOT EXISTS idx_users_clerk_id ON users(clerk_id);
 
--- Drivers table (seeded with data)
+-- Drivers table
 CREATE TABLE IF NOT EXISTS drivers (
   id SERIAL PRIMARY KEY,
+  clerk_id TEXT,
   first_name TEXT NOT NULL,
   last_name TEXT NOT NULL,
   profile_image_url TEXT,
@@ -38,9 +39,23 @@ CREATE TABLE IF NOT EXISTS drivers (
   email TEXT DEFAULT '',
   vehicle_type TEXT DEFAULT 'Economy',
   license_number TEXT DEFAULT '',
+  license_expiration DATE,
+  vehicle_make TEXT DEFAULT '',
+  vehicle_model TEXT DEFAULT '',
+  vehicle_year INTEGER,
+  vehicle_color TEXT DEFAULT '',
+  vehicle_plate TEXT DEFAULT '',
+  documents_url JSONB DEFAULT '[]',
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'suspended')),
+  submitted_at TIMESTAMP,
+  approved_at TIMESTAMP,
+  rejection_reason TEXT,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE INDEX IF NOT EXISTS idx_drivers_clerk_id ON drivers(clerk_id);
+CREATE INDEX IF NOT EXISTS idx_drivers_status ON drivers(status);
 
 -- Rides table
 CREATE TABLE IF NOT EXISTS rides (

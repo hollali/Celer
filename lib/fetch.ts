@@ -7,10 +7,15 @@ export function setAuthToken(token: string | null) {
 }
 
 export const fetchAPI = async (url: string, options?: RequestInit, tokenOverride?: string | null) => {
+  const isFormData = options?.body instanceof FormData;
+
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
     ...(options?.headers as Record<string, string> || {}),
   };
+
+  if (!isFormData) {
+    headers["Content-Type"] = "application/json";
+  }
 
   const token = tokenOverride !== undefined ? tokenOverride : storedToken;
   if (token) {

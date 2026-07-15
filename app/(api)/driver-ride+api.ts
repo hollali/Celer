@@ -1,6 +1,11 @@
 import sql from "@/lib/neon";
 import { authenticateRequest, unauthorizedResponse } from "@/lib/api-auth";
 
+async function findDriverByEmail(email: string) {
+  const rows = await sql`SELECT id, status FROM drivers WHERE email = ${email} LIMIT 1`;
+  return rows[0] || null;
+}
+
 export async function GET(request: Request) {
   try {
     const user = await authenticateRequest(request);
@@ -9,14 +14,27 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get("action");
 
-    // Find driver record for this user
-    const driverRecord = await sql`
-      SELECT id FROM drivers WHERE email = ${user.email} LIMIT 1
-    `;
-    if (driverRecord.length === 0) {
+    if (action === "check_status") {
+      const driver = await findDriverByEmail(user.email);
+      return Response.json({
+        data: driver
+          ? { exists: true, status: driver.status, driver_id: driver.id }
+          : { exists: false, status: null, driver_id: null },
+      }, { status: 200 });
+    }
+
+    const driver = await findDriverByEmail(user.email);
+    if (!driver) {
       return Response.json({ error: "Driver profile not found" }, { status: 404 });
     }
-    const driverId = driverRecord[0].id;
+
+    if (action === "pending" || action === "active" || action === "earnings") {
+      if (driver.status !== "approved") {
+        return Response.json({ error: "Driver account not approved", status: driver.status }, { status: 403 });
+      }
+    }
+
+    const driverId = driver.id;
 
     if (action === "pending") {
       const lat = parseFloat(searchParams.get("lat") || "0");
@@ -114,12 +132,14 @@ export async function GET(request: Request) {
     }
 
     if (action === "profile") {
-      const driver = await sql`
+      const driverData = await sql`
         SELECT id, first_name, last_name, profile_image_url, car_image_url,
-               car_seats, rating, is_available, phone, email, vehicle_type, license_number
+               car_seats, rating, is_available, phone, email, vehicle_type,
+               license_number, status, vehicle_make, vehicle_model, vehicle_year,
+               vehicle_color, vehicle_plate, submitted_at, approved_at
         FROM drivers WHERE id = ${driverId} LIMIT 1
       `;
-      return Response.json({ data: driver[0] || null }, { status: 200 });
+      return Response.json({ data: driverData[0] || null }, { status: 200 });
     }
 
     return Response.json({ error: "Invalid action" }, { status: 400 });
@@ -133,16 +153,62 @@ export async function POST(request: Request) {
     const user = await authenticateRequest(request);
     if (!user?.dbUserId) return unauthorizedResponse();
 
-    const driverRecord = await sql`
-      SELECT id FROM drivers WHERE email = ${user.email} LIMIT 1
-    `;
-    if (driverRecord.length === 0) {
+    const body = await request.json();
+    const { action } = body;
+
+    if (action === "register_driver") {
+      const {
+        first_name, last_name, phone, email, vehicle_type,
+        vehicle_make, vehicle_model, vehicle_year, vehicle_color,
+        vehicle_plate, car_seats, license_number, documents,
+      } = body;
+
+      if (!first_name || !last_name || !phone || !email || !vehicle_make || !vehicle_model || !vehicle_plate || !license_number) {
+        return Response.json({ error: "Missing required fields" }, { status: 400 });
+      }
+
+      const existing = await findDriverByEmail(email);
+      if (existing) {
+        return Response.json({ error: "A driver application already exists for this email" }, { status: 409 });
+      }
+
+      const docsJson = JSON.stringify(documents || {});
+
+      const result = await sql`
+        INSERT INTO drivers (
+          clerk_id, first_name, last_name, phone, email,
+          vehicle_type, vehicle_make, vehicle_model, vehicle_year,
+          vehicle_color, vehicle_plate, car_seats, license_number,
+          documents_url, status, submitted_at, profile_image_url
+        ) VALUES (
+          ${user.clerkId}, ${first_name}, ${last_name}, ${phone}, ${email},
+          ${vehicle_type || "Economy"}, ${vehicle_make}, ${vehicle_model}, ${vehicle_year || null},
+          ${vehicle_color}, ${vehicle_plate}, ${car_seats || 4}, ${license_number},
+          ${docsJson}::jsonb, 'approved', NOW(), ${documents?.profile_photo || null}
+        )
+        RETURNING id, status
+      `;
+
+      return Response.json({
+        data: {
+          driver_id: result[0].id,
+          status: result[0].status,
+          message: "Driver application submitted successfully",
+        },
+      }, { status: 201 });
+    }
+
+    const driver = await findDriverByEmail(user.email);
+    if (!driver) {
       return Response.json({ error: "Driver profile not found" }, { status: 404 });
     }
-    const driverId = driverRecord[0].id;
 
-    const body = await request.json();
-    const { action, ride_id, is_available } = body;
+    if (driver.status !== "approved") {
+      return Response.json({ error: "Driver account not approved", status: driver.status }, { status: 403 });
+    }
+
+    const driverId = driver.id;
+    const { ride_id, is_available } = body;
 
     if (action === "accept") {
       if (!ride_id) {
@@ -162,7 +228,6 @@ export async function POST(request: Request) {
     }
 
     if (action === "decline") {
-      // Simply skip — the ride stays unassigned
       return Response.json({ data: { declined: true } }, { status: 200 });
     }
 

@@ -193,7 +193,7 @@ const MenuSection = ({
       <RowDivider />
       <MenuRow icon="document-text-outline" label="Legal & Privacy" accessibilityHint="Review legal agreements and privacy settings" onPress={() => router.push("/legal")} isDark={isDark} />
       <RowDivider />
-      <MenuRow icon="car-sport-outline" label="Switch to Driver" accessibilityHint="Open the driver dashboard" onPress={() => router.push("/(driver)/(tabs)")} isDark={isDark} />
+      <MenuRow icon="car-sport-outline" label="Become a Driver" accessibilityHint="Apply to drive with Celer" onPress={() => router.push("/(driver)/(tabs)")} isDark={isDark} />
     </>
   );
 

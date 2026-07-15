@@ -47,6 +47,12 @@
           "locationAlwaysPermission": "Allow Celer to use your location even when the app is in the background.",
           "locationWhenInUsePermission": "Allow Celer to use your location while the app is in use."
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Celer to access your photos for document uploads."
+        }
       ]
     ],
     "experiments": {
