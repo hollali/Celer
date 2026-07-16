@@ -47,7 +47,8 @@ export async function GET(request: Request) {
           json_build_object('name', u.name) AS user
         FROM rides r
         JOIN users u ON r.user_id = u.id
-        WHERE r.ride_status = 'requested' AND r.driver_id IS NULL
+        WHERE r.ride_status = 'requested'
+          AND (r.driver_id IS NULL OR r.driver_id = ${driverId})
         ORDER BY r.created_at DESC
         LIMIT 20
       `;
@@ -60,7 +61,8 @@ export async function GET(request: Request) {
             json_build_object('name', u.name) AS user
           FROM rides r
           JOIN users u ON r.user_id = u.id
-          WHERE r.ride_status = 'requested' AND r.driver_id IS NULL
+          WHERE r.ride_status = 'requested'
+            AND (r.driver_id IS NULL OR r.driver_id = ${driverId})
             AND ST_DWithin(
               ST_MakePoint(r.origin_longitude, r.origin_latitude)::geography,
               ST_MakePoint(${lng}, ${lat})::geography,
