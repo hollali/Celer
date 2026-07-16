@@ -63,16 +63,27 @@ const Home = () => {
       }
 
       const location = await Location.getCurrentPositionAsync({});
-      const address = await Location.reverseGeocodeAsync({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      });
+      const { latitude, longitude } = location.coords;
 
-      setUserLocation({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        address: `${address[0]?.formattedAddress || address[0]?.street || "Current Location"}, ${address[0]?.city || ""}`,
-      });
+      let addressText = "Current Location";
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=18&addressdetails=1`,
+          { headers: { Accept: "application/json", "User-Agent": "CelerApp/1.0" } },
+        );
+        if (res.ok) {
+          const data = await res.json();
+          const a = data.address || {};
+          const parts = [a.road, a.neighbourhood || a.suburb || a.quarter, a.city || a.town || a.village].filter(Boolean);
+          if (parts.length > 0) {
+            addressText = parts.join(", ");
+          } else if (data.display_name) {
+            addressText = data.display_name.split(",").slice(0, 3).join(",").trim();
+          }
+        }
+      } catch {}
+
+      setUserLocation({ latitude, longitude, address: addressText });
       setLocationStatus("granted");
     } catch {
       setLocationStatus("unavailable");

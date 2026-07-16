@@ -24,7 +24,12 @@ export const fetchAPI = async (url: string, options?: RequestInit, tokenOverride
 
   const response = await fetch(url, { ...options, headers });
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+    let detail = "";
+    try {
+      const body = await response.json();
+      detail = body.error || "";
+    } catch {}
+    throw new Error(detail || `HTTP error! status: ${response.status}`);
   }
   return await response.json();
 };

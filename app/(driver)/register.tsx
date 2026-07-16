@@ -5,6 +5,8 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   Text,
   TextInput,
@@ -82,18 +84,33 @@ const DriverRegister = () => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleUploadDocument = async (type: DocumentType) => {
+  const handleUploadDocument = async (type: DocumentType, source: "library" | "camera" = "library") => {
     try {
       setUploadingDoc(type);
-      const result = await pickAndUploadImage(type, "library");
+      const result = await pickAndUploadImage(type, source);
       if (result) {
-        updateField("documents", { ...form.documents, [type]: result.url });
+        setForm((prev) => ({
+          ...prev,
+          documents: { ...prev.documents, [type]: result.url },
+        }));
       }
     } catch (err) {
       Alert.alert("Upload Failed", (err as Error).message || "Could not upload document.");
     } finally {
       setUploadingDoc(null);
     }
+  };
+
+  const promptDocumentSource = (type: DocumentType) => {
+    Alert.alert(
+      `Upload ${DOCUMENT_LABELS[type]}`,
+      "Choose an option",
+      [
+        { text: "Take Photo", onPress: () => handleUploadDocument(type, "camera") },
+        { text: "Choose from Library", onPress: () => handleUploadDocument(type, "library") },
+        { text: "Cancel", style: "cancel" },
+      ],
+    );
   };
 
   const validateStep = (): boolean => {
@@ -181,6 +198,11 @@ const DriverRegister = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-dark-bg">
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={0}
+      >
       <ScrollView contentContainerClassName="pb-12" keyboardShouldPersistTaps="handled">
         {/* Header */}
         <View className="flex-row items-center px-5 pt-4 pb-2">
@@ -428,7 +450,7 @@ const DriverRegister = () => {
               {REQUIRED_DOCUMENTS.map((docType) => (
                 <TouchableOpacity
                   key={docType}
-                  onPress={() => handleUploadDocument(docType)}
+                  onPress={() => promptDocumentSource(docType)}
                   disabled={uploadingDoc === docType}
                   className="mb-4 flex-row items-center rounded-xl border border-slate-200 dark:border-dark-border bg-slate-50 dark:bg-dark-card p-4"
                   {...a11yButton(
@@ -458,7 +480,7 @@ const DriverRegister = () => {
                     <Text className="text-xs font-JakartaMedium text-slate-500 dark:text-dark-text-secondary mt-0.5">
                       {form.documents[docType]
                         ? "Uploaded — tap to replace"
-                        : "Tap to take or choose a photo"}
+                        : "Tap to upload"}
                     </Text>
                   </View>
                   <Ionicons
@@ -535,6 +557,7 @@ const DriverRegister = () => {
           />
         )}
       </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };

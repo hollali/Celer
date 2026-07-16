@@ -266,7 +266,7 @@ export async function POST(request: Request) {
         return Response.json({ error: "Missing ride_id" }, { status: 400 });
       }
       const result = await sql`
-        UPDATE rides SET ride_status = 'canceled', driver_id = NULL, cancelled_at = NOW()
+        UPDATE rides SET ride_status = 'canceled', driver_id = NULL
         WHERE ride_id = ${ride_id} AND driver_id = ${driverId}
           AND ride_status IN ('accepted', 'in_progress')
         RETURNING ride_id

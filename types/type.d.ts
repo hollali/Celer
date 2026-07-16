@@ -50,7 +50,6 @@ declare interface Ride {
 	user_id: number;
 	created_at: string;
 	updated_at: string;
-	cancelled_at: string | null;
 	completed_at: string | null;
 	driver: {
 		first_name: string;
