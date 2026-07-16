@@ -10,15 +10,15 @@ export async function GET(request: Request) {
     const user = await authenticateRequest(request);
     if (!user?.dbUserId) return unauthorizedResponse();
 
-    // Auto-expire pending rides older than 30 minutes
-    await sql`
+    // Auto-expire pending rides older than 30 minutes (fire-and-forget cleanup)
+    sql`
       UPDATE rides
-      SET ride_status = 'canceled', payment_status = 'failed', cancelled_at = NOW()
+      SET ride_status = 'canceled', payment_status = 'failed'
       WHERE user_id = ${user.dbUserId}
         AND ride_status = 'requested'
         AND payment_status = 'pending'
         AND created_at < NOW() - INTERVAL '30 minutes'
-    `;
+    `.catch((e) => console.error("Auto-expire query failed:", e));
 
     const { searchParams } = new URL(request.url);
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
@@ -98,7 +98,8 @@ export async function GET(request: Request) {
         total: countResult[0]?.total ?? 0,
       },
     }, { status: 200 });
-  } catch {
+  } catch (e) {
+    console.error("GET /ride error:", e);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -170,7 +171,8 @@ export async function POST(request: Request) {
     `;
 
     return Response.json({ data: response }, { status: 201 });
-  } catch {
+  } catch (e) {
+    console.error("POST /ride error:", e);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -204,7 +206,6 @@ export async function PATCH(request: Request) {
       response = await sql`
         UPDATE rides
         SET payment_status = ${payment_status}, ride_status = ${ride_status},
-            cancelled_at = CASE WHEN ${ride_status} = 'canceled' THEN NOW() ELSE cancelled_at END,
             completed_at = CASE WHEN ${ride_status} = 'completed' THEN NOW() ELSE completed_at END
         WHERE ride_id = ${ride_id} AND user_id = ${user.dbUserId}
         RETURNING *
@@ -220,7 +221,6 @@ export async function PATCH(request: Request) {
       response = await sql`
         UPDATE rides
         SET ride_status = ${ride_status},
-            cancelled_at = CASE WHEN ${ride_status} = 'canceled' THEN NOW() ELSE cancelled_at END,
             completed_at = CASE WHEN ${ride_status} = 'completed' THEN NOW() ELSE completed_at END
         WHERE ride_id = ${ride_id} AND user_id = ${user.dbUserId}
         RETURNING *
@@ -252,7 +252,7 @@ export async function DELETE(request: Request) {
 
     const result = await sql`
       UPDATE rides
-      SET ride_status = 'canceled', cancelled_at = NOW()
+      SET ride_status = 'canceled'
       WHERE ride_id = ${parseInt(rideId)} AND user_id = ${user.dbUserId}
         AND ride_status IN ('requested', 'accepted')
       RETURNING ride_id
@@ -263,7 +263,8 @@ export async function DELETE(request: Request) {
     }
 
     return Response.json({ data: { canceled: true, ride_id: result[0].ride_id } }, { status: 200 });
-  } catch {
+  } catch (e) {
+    console.error("DELETE /ride error:", e);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
