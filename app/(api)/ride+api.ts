@@ -1,6 +1,6 @@
 import sql from "@/lib/neon";
 import { authenticateRequest, unauthorizedResponse } from "@/lib/api-auth";
-import { FARE_RATE_PER_MINUTE } from "@/constants";
+import { FARE_RATE_PER_MINUTE, OSRM_BASE } from "@/constants";
 
 const VALID_PAYMENT_STATUSES = ["pending", "paid", "failed", "refunded"] as const;
 const VALID_RIDE_STATUSES = ["requested", "accepted", "in_progress", "completed", "canceled"] as const;
@@ -117,7 +117,6 @@ export async function POST(request: Request) {
       origin_longitude,
       destination_latitude,
       destination_longitude,
-      ride_time,
       driver_id,
     } = body;
 
@@ -128,8 +127,6 @@ export async function POST(request: Request) {
       origin_longitude == null ||
       destination_latitude == null ||
       destination_longitude == null ||
-      ride_time == null ||
-      ride_time <= 0 ||
       !driver_id
     ) {
       return Response.json({ error: "Missing required fields" }, { status: 400 });
@@ -145,6 +142,25 @@ export async function POST(request: Request) {
     `;
     if (driverCheck.length === 0) {
       return Response.json({ error: "Driver not found" }, { status: 404 });
+    }
+
+    let ride_time: number;
+    try {
+      const osrmUrl = `${OSRM_BASE}/route/v1/driving/${origin_longitude},${origin_latitude};${destination_longitude},${destination_latitude}?overview=false`;
+      const osrmRes = await fetch(osrmUrl);
+      const osrmData = await osrmRes.json();
+      const durationSec = osrmData.routes?.[0]?.duration;
+      if (typeof durationSec === "number" && durationSec > 0) {
+        ride_time = Math.round(durationSec / 60);
+      } else {
+        ride_time = 10;
+      }
+    } catch {
+      ride_time = 10;
+    }
+
+    if (ride_time <= 0) {
+      ride_time = 1;
     }
 
     const serverPrice = Math.round(ride_time * FARE_RATE_PER_MINUTE * 100) / 100;
