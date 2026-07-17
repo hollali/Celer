@@ -27,6 +27,14 @@ import { useLocationStore, useDriverStore, useTabStore } from "@/store";
 import { useTheme } from "@/lib/ThemeContext";
 import { a11y, a11yButton, a11yImage } from "@/lib/accessibility";
 
+const geocodeCache: Record<string, string> = {};
+let lastGeocodeTime = 0;
+const GEOCODE_THROTTLE_MS = 1100;
+
+function geocodeCacheKey(lat: number, lng: number): string {
+  return `${lat.toFixed(4)},${lng.toFixed(4)}`;
+}
+
 const Home = () => {
   const { user } = useUser();
   const { getToken, isLoaded } = useAuth();
@@ -67,18 +75,33 @@ const Home = () => {
 
       let addressText = "Current Location";
       try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=18&addressdetails=1`,
-          { headers: { Accept: "application/json", "User-Agent": "CelerApp/1.0" } },
-        );
-        if (res.ok) {
-          const data = await res.json();
-          const a = data.address || {};
-          const parts = [a.road, a.neighbourhood || a.suburb || a.quarter, a.city || a.town || a.village].filter(Boolean);
-          if (parts.length > 0) {
-            addressText = parts.join(", ");
-          } else if (data.display_name) {
-            addressText = data.display_name.split(",").slice(0, 3).join(",").trim();
+        const cacheKey = geocodeCacheKey(latitude, longitude);
+        const cached = geocodeCache[cacheKey];
+        if (cached) {
+          addressText = cached;
+        } else {
+          const now = Date.now();
+          const wait = GEOCODE_THROTTLE_MS - (now - lastGeocodeTime);
+          if (wait > 0) {
+            await new Promise((r) => setTimeout(r, wait));
+          }
+          lastGeocodeTime = Date.now();
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=18&addressdetails=1`,
+            { headers: { Accept: "application/json", "User-Agent": "CelerApp/1.0" } },
+          );
+          if (res.ok) {
+            const data = await res.json();
+            const a = data.address || {};
+            const parts = [a.road, a.neighbourhood || a.suburb || a.quarter, a.city || a.town || a.village].filter(Boolean);
+            if (parts.length > 0) {
+              addressText = parts.join(", ");
+            } else if (data.display_name) {
+              addressText = data.display_name.split(",").slice(0, 3).join(",").trim();
+            }
+            geocodeCache[cacheKey] = addressText;
+          } else if (res.status === 429) {
+            addressText = "Current Location";
           }
         }
       } catch {}
@@ -129,7 +152,8 @@ const Home = () => {
         });
         const list = driversWithTimes || data.data;
         setDrivers(list);
-        setSelectedDriver(list[Math.floor(Math.random() * list.length)].id);
+        const sorted = [...list].sort((a, b) => (a.time ?? Infinity) - (b.time ?? Infinity));
+        setSelectedDriver(sorted[0].id);
       } else {
         setDriverError("No drivers available in your area");
       }
@@ -174,7 +198,8 @@ const Home = () => {
         });
         const list = driversWithTimes || data.data;
         setDrivers(list);
-        setSelectedDriver(list[Math.floor(Math.random() * list.length)].id);
+        const sorted = [...list].sort((a, b) => (a.time ?? Infinity) - (b.time ?? Infinity));
+        setSelectedDriver(sorted[0].id);
       } else {
         setDriverError("No drivers available in your area");
       }
@@ -204,7 +229,6 @@ const Home = () => {
           origin_longitude: useLocationStore.getState().userLongitude,
           destination_latitude: useLocationStore.getState().destinationLatitude,
           destination_longitude: useLocationStore.getState().destinationLongitude,
-          ride_time: Math.round(driver.time || 0),
           payment_status: "pending",
           driver_id: driver.id,
         }),

@@ -1,3 +1,4 @@
+import { verifyToken } from "@clerk/backend";
 import sql from "@/lib/neon";
 import { withRetry } from "@/lib/neon";
 
@@ -7,17 +8,7 @@ export interface AuthUser {
   dbUserId: number | null;
 }
 
-function decodeJwtPayload(token: string): Record<string, unknown> | null {
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-    const payload = parts[1];
-    const decoded = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
-    return JSON.parse(decoded);
-  } catch {
-    return null;
-  }
-}
+const clerkSecretKey = process.env.CLERK_SECRET_KEY;
 
 export async function authenticateRequest(request: Request): Promise<AuthUser | null> {
   const authHeader = request.headers.get("Authorization");
@@ -30,19 +21,25 @@ export async function authenticateRequest(request: Request): Promise<AuthUser | 
     return null;
   }
 
-  const payload = decodeJwtPayload(token);
-  if (!payload) {
+  if (!clerkSecretKey) {
+    console.error("CLERK_SECRET_KEY is not set — cannot verify tokens");
     return null;
   }
 
-  const clerkId = payload.sub as string | undefined;
-  if (!clerkId) {
+  let payload;
+  try {
+    payload = await verifyToken(token, { secretKey: clerkSecretKey });
+  } catch (err) {
+    console.error("JWT verification failed:", (err as Error).message);
     return null;
   }
 
-  const email = (payload.email as string)
-    || (payload.email_address as string)
-    || "";
+  if (!payload?.sub) {
+    return null;
+  }
+
+  const clerkId = payload.sub;
+  const email = (payload.email as string) || "";
 
   const name = (payload.name as string)
     || [payload.given_name, payload.family_name].filter(Boolean).join(" ")
@@ -67,7 +64,8 @@ export async function authenticateRequest(request: Request): Promise<AuthUser | 
     if (userResult.length > 0) {
       dbUserId = userResult[0].id;
     }
-  } catch {
+  } catch (err) {
+    console.error("DB lookup/insert failed for clerk_id:", clerkId, (err as Error).message);
     return { clerkId, email, dbUserId: null };
   }
 
