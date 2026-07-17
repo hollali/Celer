@@ -73,7 +73,8 @@ export async function GET(request: Request) {
     }
 
     return Response.json({ data: conversations }, { status: 200 });
-  } catch {
+  } catch (err) {
+    console.error("GET /chat error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -113,7 +114,8 @@ export async function POST(request: Request) {
     `;
 
     return Response.json({ data: result[0] }, { status: 201 });
-  } catch {
+  } catch (err) {
+    console.error("POST /chat error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

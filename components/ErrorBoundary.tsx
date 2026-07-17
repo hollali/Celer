@@ -22,18 +22,18 @@ export class ErrorBoundary extends React.Component<
   render() {
     if (this.state.hasError) {
       return (
-        <View className="flex-1 items-center justify-center bg-white dark:bg-dark-bg px-6">
-          <Text className="text-xl font-JakartaBold text-gray-900 dark:text-dark-text text-center">
+        <View className="flex-1 items-center justify-center bg-white px-6 dark:bg-dark-bg">
+          <Text className="text-center font-JakartaBold text-xl text-gray-900 dark:text-dark-text">
             {this.props.fallbackTitle || "Something went wrong"}
           </Text>
-          <Text className="text-sm font-JakartaMedium text-gray-500 dark:text-dark-text-secondary text-center mt-2">
+          <Text className="mt-2 text-center font-JakartaMedium text-sm text-gray-500 dark:text-dark-text-secondary">
             {this.state.error?.message || "An unexpected error occurred"}
           </Text>
           <TouchableOpacity
             onPress={() => this.setState({ hasError: false, error: null })}
-            className="mt-6 bg-primary-500 rounded-full px-6 py-3"
+            className="mt-6 rounded-full bg-primary-500 px-6 py-3"
           >
-            <Text className="text-white font-JakartaBold">Try Again</Text>
+            <Text className="font-JakartaBold text-white">Try Again</Text>
           </TouchableOpacity>
         </View>
       );

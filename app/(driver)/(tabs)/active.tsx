@@ -1,14 +1,7 @@
 import { useAuth } from "@clerk/clerk-expo";
 import { router } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  RefreshControl,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, Alert, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -65,10 +58,14 @@ const ActiveRide = () => {
     setUpdating(true);
     try {
       const token = await getToken();
-      await fetchAPI("/(api)/driver-ride", {
-        method: "POST",
-        body: JSON.stringify({ action: "start", ride_id: activeRide.ride_id }),
-      }, token);
+      await fetchAPI(
+        "/(api)/driver-ride",
+        {
+          method: "POST",
+          body: JSON.stringify({ action: "start", ride_id: activeRide.ride_id }),
+        },
+        token,
+      );
       fetchActiveRide();
     } catch {
       Alert.alert("Error", "Failed to start ride.");
@@ -82,10 +79,14 @@ const ActiveRide = () => {
     setUpdating(true);
     try {
       const token = await getToken();
-      await fetchAPI("/(api)/driver-ride", {
-        method: "POST",
-        body: JSON.stringify({ action: "complete", ride_id: activeRide.ride_id }),
-      }, token);
+      await fetchAPI(
+        "/(api)/driver-ride",
+        {
+          method: "POST",
+          body: JSON.stringify({ action: "complete", ride_id: activeRide.ride_id }),
+        },
+        token,
+      );
       Alert.alert("Ride Completed", "Great work! The ride has been completed.", [
         { text: "OK", onPress: () => fetchActiveRide() },
       ]);
@@ -107,10 +108,14 @@ const ActiveRide = () => {
           setUpdating(true);
           try {
             const token = await getToken();
-            await fetchAPI("/(api)/driver-ride", {
-              method: "POST",
-              body: JSON.stringify({ action: "cancel", ride_id: activeRide.ride_id }),
-            }, token);
+            await fetchAPI(
+              "/(api)/driver-ride",
+              {
+                method: "POST",
+                body: JSON.stringify({ action: "cancel", ride_id: activeRide.ride_id }),
+              },
+              token,
+            );
             fetchActiveRide();
           } catch {
             Alert.alert("Error", "Failed to cancel ride.");
@@ -127,11 +132,19 @@ const ActiveRide = () => {
       <ScrollView
         contentContainerClassName="pb-24"
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#0286FF" colors={["#0286FF"]} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="#0286FF"
+            colors={["#0286FF"]}
+          />
         }
       >
-        <View className="px-5 pt-4 pb-3">
-          <Text className="text-2xl font-JakartaExtraBold text-black dark:text-dark-text" {...a11yHeader("Active Ride")}>
+        <View className="px-5 pb-3 pt-4">
+          <Text
+            className="font-JakartaExtraBold text-2xl text-black dark:text-dark-text"
+            {...a11yHeader("Active Ride")}
+          >
             Active Ride
           </Text>
         </View>
@@ -141,46 +154,50 @@ const ActiveRide = () => {
             <ActivityIndicator size="large" color="#0286FF" />
           </View>
         ) : !activeRide ? (
-          <View className="items-center py-20 px-5">
+          <View className="items-center px-5 py-20">
             <Ionicons name="checkmark-circle-outline" size={64} color="#94a3b8" />
-            <Text className="text-lg font-JakartaBold text-secondary-900 dark:text-dark-text mt-4">
+            <Text className="mt-4 font-JakartaBold text-lg text-secondary-900 dark:text-dark-text">
               No active ride
             </Text>
-            <Text className="text-sm font-JakartaMedium text-general-200 dark:text-dark-text-secondary mt-1 text-center">
+            <Text className="mt-1 text-center font-JakartaMedium text-sm text-general-200 dark:text-dark-text-secondary">
               Accept a ride request to get started.
             </Text>
           </View>
         ) : (
           <View className="px-5">
             {/* Status badge */}
-            <View className={`self-start rounded-full px-4 py-2 mb-4 ${
-              activeRide.ride_status === "accepted"
-                ? "bg-warning-100 dark:bg-warning-900/30"
-                : "bg-success-100 dark:bg-success-900/30"
-            }`}>
-              <Text className={`text-sm font-JakartaBold ${
+            <View
+              className={`mb-4 self-start rounded-full px-4 py-2 ${
                 activeRide.ride_status === "accepted"
-                  ? "text-warning-600 dark:text-warning-400"
-                  : "text-success-600 dark:text-success-400"
-              }`}>
+                  ? "bg-warning-100 dark:bg-warning-900/30"
+                  : "bg-success-100 dark:bg-success-900/30"
+              }`}
+            >
+              <Text
+                className={`font-JakartaBold text-sm ${
+                  activeRide.ride_status === "accepted"
+                    ? "text-warning-600 dark:text-warning-400"
+                    : "text-success-600 dark:text-success-400"
+                }`}
+              >
                 {activeRide.ride_status === "accepted" ? "Heading to pickup" : "Ride in progress"}
               </Text>
             </View>
 
             {/* Rider info */}
-            <View className="rounded-2xl bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4 mb-4">
-              <Text className="text-sm font-JakartaBold text-slate-400 dark:text-dark-text-secondary uppercase tracking-wider mb-3">
+            <View className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card">
+              <Text className="mb-3 font-JakartaBold text-sm uppercase tracking-wider text-slate-400 dark:text-dark-text-secondary">
                 Rider
               </Text>
               <View className="flex-row items-center">
-                <View className="w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-800 items-center justify-center">
+                <View className="h-12 w-12 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-800">
                   <Ionicons name="person" size={22} color="#0286FF" />
                 </View>
                 <View className="ml-3 flex-1">
-                  <Text className="text-base font-JakartaSemiBold text-slate-900 dark:text-dark-text">
+                  <Text className="font-JakartaSemiBold text-base text-slate-900 dark:text-dark-text">
                     {activeRide.user?.name || "Rider"}
                   </Text>
-                  <Text className="text-sm font-JakartaMedium text-slate-500 dark:text-dark-text-secondary">
+                  <Text className="font-JakartaMedium text-sm text-slate-500 dark:text-dark-text-secondary">
                     {activeRide.user?.phone || "No phone number"}
                   </Text>
                 </View>
@@ -188,38 +205,53 @@ const ActiveRide = () => {
             </View>
 
             {/* Route */}
-            <View className="rounded-2xl bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4 mb-4">
-              <Text className="text-sm font-JakartaBold text-slate-400 dark:text-dark-text-secondary uppercase tracking-wider mb-3">
+            <View className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card">
+              <Text className="mb-3 font-JakartaBold text-sm uppercase tracking-wider text-slate-400 dark:text-dark-text-secondary">
                 Route
               </Text>
-              <View className="flex-row items-start mb-3">
-                <View className="w-2 h-2 rounded-full bg-primary-500 mt-2" />
+              <View className="mb-3 flex-row items-start">
+                <View className="mt-2 h-2 w-2 rounded-full bg-primary-500" />
                 <View className="ml-3 flex-1">
-                  <Text className="text-xs font-JakartaMedium text-slate-500 dark:text-dark-text-secondary">Pickup</Text>
-                  <Text className="text-sm font-JakartaSemiBold text-slate-900 dark:text-dark-text">{activeRide.origin_address}</Text>
+                  <Text className="font-JakartaMedium text-xs text-slate-500 dark:text-dark-text-secondary">
+                    Pickup
+                  </Text>
+                  <Text className="font-JakartaSemiBold text-sm text-slate-900 dark:text-dark-text">
+                    {activeRide.origin_address}
+                  </Text>
                 </View>
               </View>
-              <View className="h-4 border-l-2 border-dashed border-slate-300 dark:border-dark-border ml-[3px] mb-3" />
+              <View className="mb-3 ml-[3px] h-4 border-l-2 border-dashed border-slate-300 dark:border-dark-border" />
               <View className="flex-row items-start">
-                <View className="w-2 h-2 rounded-full bg-general-400 mt-2" />
+                <View className="mt-2 h-2 w-2 rounded-full bg-general-400" />
                 <View className="ml-3 flex-1">
-                  <Text className="text-xs font-JakartaMedium text-slate-500 dark:text-dark-text-secondary">Drop-off</Text>
-                  <Text className="text-sm font-JakartaSemiBold text-slate-900 dark:text-dark-text">{activeRide.destination_address}</Text>
+                  <Text className="font-JakartaMedium text-xs text-slate-500 dark:text-dark-text-secondary">
+                    Drop-off
+                  </Text>
+                  <Text className="font-JakartaSemiBold text-sm text-slate-900 dark:text-dark-text">
+                    {activeRide.destination_address}
+                  </Text>
                 </View>
               </View>
             </View>
 
             {/* Fare */}
-            <View className="rounded-2xl bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4 mb-6">
-              <View className="flex-row justify-between items-center">
-                <Text className="text-base font-JakartaMedium text-slate-700 dark:text-dark-text">Fare</Text>
-                <Text className="text-xl font-JakartaExtraBold text-primary-500">
-                  {CURRENCY_SYMBOL}{activeRide.fare_price}
+            <View className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card">
+              <View className="flex-row items-center justify-between">
+                <Text className="font-JakartaMedium text-base text-slate-700 dark:text-dark-text">
+                  Fare
+                </Text>
+                <Text className="font-JakartaExtraBold text-xl text-primary-500">
+                  {CURRENCY_SYMBOL}
+                  {activeRide.fare_price}
                 </Text>
               </View>
-              <View className="flex-row justify-between items-center mt-2">
-                <Text className="text-sm font-JakartaMedium text-slate-500 dark:text-dark-text-secondary">Duration</Text>
-                <Text className="text-sm font-JakartaSemiBold text-slate-900 dark:text-dark-text">~{activeRide.ride_time} min</Text>
+              <View className="mt-2 flex-row items-center justify-between">
+                <Text className="font-JakartaMedium text-sm text-slate-500 dark:text-dark-text-secondary">
+                  Duration
+                </Text>
+                <Text className="font-JakartaSemiBold text-sm text-slate-900 dark:text-dark-text">
+                  ~{activeRide.ride_time} min
+                </Text>
               </View>
             </View>
 
@@ -227,13 +259,37 @@ const ActiveRide = () => {
             <View className="flex-row gap-3">
               {activeRide.ride_status === "accepted" ? (
                 <>
-                  <CustomButton title="Cancel" onPress={handleCancelRide} bgVariant="secondary" textVariant="primary" className="flex-1" disabled={updating} />
-                  <CustomButton title={updating ? "Starting..." : "Start Ride"} onPress={handleStartRide} className="flex-1 bg-primary-500" disabled={updating} />
+                  <CustomButton
+                    title="Cancel"
+                    onPress={handleCancelRide}
+                    bgVariant="secondary"
+                    textVariant="primary"
+                    className="flex-1"
+                    disabled={updating}
+                  />
+                  <CustomButton
+                    title={updating ? "Starting..." : "Start Ride"}
+                    onPress={handleStartRide}
+                    className="flex-1 bg-primary-500"
+                    disabled={updating}
+                  />
                 </>
               ) : (
                 <>
-                  <CustomButton title="Cancel" onPress={handleCancelRide} bgVariant="secondary" textVariant="primary" className="flex-1" disabled={updating} />
-                  <CustomButton title={updating ? "Completing..." : "Complete Ride"} onPress={handleCompleteRide} className="flex-1 bg-success-500" disabled={updating} />
+                  <CustomButton
+                    title="Cancel"
+                    onPress={handleCancelRide}
+                    bgVariant="secondary"
+                    textVariant="primary"
+                    className="flex-1"
+                    disabled={updating}
+                  />
+                  <CustomButton
+                    title={updating ? "Completing..." : "Complete Ride"}
+                    onPress={handleCompleteRide}
+                    className="flex-1 bg-success-500"
+                    disabled={updating}
+                  />
                 </>
               )}
             </View>

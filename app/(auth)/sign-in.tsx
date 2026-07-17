@@ -37,8 +37,7 @@ const SignIn = () => {
         Alert.alert("Error", "Log in failed. Please try again.");
       }
     } catch (err: any) {
-      const message =
-        err?.errors?.[0]?.longMessage ?? "Log in failed. Please try again.";
+      const message = err?.errors?.[0]?.longMessage ?? "Log in failed. Please try again.";
       Alert.alert("Error", message);
     }
   }, [form, isLoaded, router, setActive, signIn]);
@@ -46,9 +45,13 @@ const SignIn = () => {
   return (
     <ScrollView className="flex-1 bg-white dark:bg-dark-bg">
       <View className="flex-1 bg-white dark:bg-dark-bg">
-        <View className="relative w-full h-[250px]">
-          <Image source={images.signUpCar} className="z-0 w-full h-[250px]" {...a11yImage("Welcome back illustration")} />
-          <Text className="text-2xl text-black dark:text-dark-text font-JakartaSemiBold absolute bottom-5 left-5">
+        <View className="relative h-[250px] w-full">
+          <Image
+            source={images.signUpCar}
+            className="z-0 h-[250px] w-full"
+            {...a11yImage("Welcome back illustration")}
+          />
+          <Text className="absolute bottom-5 left-5 font-JakartaSemiBold text-2xl text-black dark:text-dark-text">
             Welcome Back
           </Text>
         </View>
@@ -70,20 +73,16 @@ const SignIn = () => {
           />
           <Link
             href="/(auth)/forgot-password"
-            className="text-sm text-right text-primary-500 mt-2"
+            className="mt-2 text-right text-sm text-primary-500"
             {...a11yLink("Forgot password", "Navigate to password reset")}
           >
             Forgot Password?
           </Link>
-          <CustomButton
-            title="Sign In"
-            onPress={onSignInPress}
-            className="mt-6 bg-primary-500"
-          />
+          <CustomButton title="Sign In" onPress={onSignInPress} className="mt-6 bg-primary-500" />
           <OAuth />
           <Link
             href="/sign-up"
-            className="text-lg text-center text-general-200 dark:text-dark-text-secondary mt-10"
+            className="mt-10 text-center text-lg text-general-200 dark:text-dark-text-secondary"
             {...a11yLink("Sign up", "Navigate to create account page")}
           >
             <Text className="dark:text-dark-text-secondary">Don't have an account? </Text>

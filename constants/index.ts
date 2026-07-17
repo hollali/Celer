@@ -33,70 +33,69 @@ import onboarding3 from "@/assets/images/onboarding3.png";
 import signUpCar from "@/assets/images/signup-car.png";
 
 export const images = {
-	onboarding1,
-	onboarding2,
-	onboarding3,
-	getStarted,
-	signUpCar,
-	check,
-	noResult,
-	message,
+  onboarding1,
+  onboarding2,
+  onboarding3,
+  getStarted,
+  signUpCar,
+  check,
+  noResult,
+  message,
 };
 
 export const icons = {
-	arrowDown,
-	arrowUp,
-	backArrow,
-	chat,
-	checkmark,
-	close,
-	dollar,
-	email,
-	eyecross,
-	google,
-	home,
-	list,
-	lock,
-	map,
-	marker,
-	out,
-	person,
-	pin,
-	point,
-	profile,
-	search,
-	selectedMarker,
-	star,
-	target,
-	to,
+  arrowDown,
+  arrowUp,
+  backArrow,
+  chat,
+  checkmark,
+  close,
+  dollar,
+  email,
+  eyecross,
+  google,
+  home,
+  list,
+  lock,
+  map,
+  marker,
+  out,
+  person,
+  pin,
+  point,
+  profile,
+  search,
+  selectedMarker,
+  star,
+  target,
+  to,
 };
 
 export const onboarding = [
-	{
-		id: 1,
-		title: "The perfect ride is just a tap away!",
-		description:
-			"Your journey begins with Celer. Find your ideal ride effortlessly.",
-		image: images.onboarding1,
-	},
-	{
-		id: 2,
-		title: "Best car in your hands with Celer",
-		description:
-			"Discover the convenience of finding your perfect ride with Celer",
-		image: images.onboarding2,
-	},
-	{
-		id: 3,
-		title: "Your ride, your way. Let's go!",
-		description:
-			"Enter your destination, sit back, and let us take care of the rest.",
-		image: images.onboarding3,
-	},
+  {
+    id: 1,
+    title: "The perfect ride is just a tap away!",
+    description: "Your journey begins with Celer. Find your ideal ride effortlessly.",
+    image: images.onboarding1,
+  },
+  {
+    id: 2,
+    title: "Best car in your hands with Celer",
+    description: "Discover the convenience of finding your perfect ride with Celer",
+    image: images.onboarding2,
+  },
+  {
+    id: 3,
+    title: "Your ride, your way. Let's go!",
+    description: "Enter your destination, sit back, and let us take care of the rest.",
+    image: images.onboarding3,
+  },
 ];
 
 export const CURRENCY_SYMBOL = "GH₵";
 
+export const BASE_FARE = 5.0;
+export const FARE_RATE_PER_KM = 2.0;
 export const FARE_RATE_PER_MINUTE = 0.5;
 
 export const MAX_MESSAGE_LENGTH = 2000;
@@ -107,7 +106,7 @@ export const RATE_LIMIT_WINDOW_MS = 60_000;
 export const OSRM_BASE = "https://router.project-osrm.org";
 
 export const data = {
-	onboarding,
+  onboarding,
 };
 
 export { colors } from "./colors";

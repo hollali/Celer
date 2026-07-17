@@ -53,7 +53,11 @@ const DriverHome = () => {
         params.set("lng", String(userLongitude));
       }
       const query = params.toString();
-      const data = await fetchAPI(`/(api)/driver-ride?action=pending${query ? `&${query}` : ""}`, undefined, token);
+      const data = await fetchAPI(
+        `/(api)/driver-ride?action=pending${query ? `&${query}` : ""}`,
+        undefined,
+        token,
+      );
       setRideRequests(data?.data || []);
     } catch {
       // silent
@@ -76,10 +80,14 @@ const DriverHome = () => {
     setAcceptingId(rideId);
     try {
       const token = await getToken();
-      await fetchAPI("/(api)/driver-ride", {
-        method: "POST",
-        body: JSON.stringify({ action: "accept", ride_id: rideId }),
-      }, token);
+      await fetchAPI(
+        "/(api)/driver-ride",
+        {
+          method: "POST",
+          body: JSON.stringify({ action: "accept", ride_id: rideId }),
+        },
+        token,
+      );
       Alert.alert("Ride Accepted", "Navigate to the pickup location.", [
         { text: "OK", onPress: () => router.push("/(driver)/(tabs)/active") },
       ]);
@@ -94,10 +102,14 @@ const DriverHome = () => {
   const handleDeclineRide = async (rideId: number) => {
     try {
       const token = await getToken();
-      await fetchAPI("/(api)/driver-ride", {
-        method: "POST",
-        body: JSON.stringify({ action: "decline", ride_id: rideId }),
-      }, token);
+      await fetchAPI(
+        "/(api)/driver-ride",
+        {
+          method: "POST",
+          body: JSON.stringify({ action: "decline", ride_id: rideId }),
+        },
+        token,
+      );
       fetchRideRequests();
     } catch {
       // silent
@@ -107,10 +119,14 @@ const DriverHome = () => {
   const toggleAvailability = async () => {
     try {
       const token = await getToken();
-      await fetchAPI("/(api)/driver-ride", {
-        method: "POST",
-        body: JSON.stringify({ action: "toggle_availability", is_available: !isAvailable }),
-      }, token);
+      await fetchAPI(
+        "/(api)/driver-ride",
+        {
+          method: "POST",
+          body: JSON.stringify({ action: "toggle_availability", is_available: !isAvailable }),
+        },
+        token,
+      );
       setIsAvailable(!isAvailable);
     } catch {
       Alert.alert("Error", "Failed to update availability.");
@@ -122,29 +138,46 @@ const DriverHome = () => {
       <ScrollView
         contentContainerClassName="pb-24"
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#0286FF" colors={["#0286FF"]} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="#0286FF"
+            colors={["#0286FF"]}
+          />
         }
       >
         {/* Header */}
-        <View className="flex-row items-center justify-between px-5 pt-4 pb-3">
+        <View className="flex-row items-center justify-between px-5 pb-3 pt-4">
           <View>
-            <Text className="text-2xl font-JakartaExtraBold text-black dark:text-dark-text" {...a11yHeader("Driver Dashboard")}>
+            <Text
+              className="font-JakartaExtraBold text-2xl text-black dark:text-dark-text"
+              {...a11yHeader("Driver Dashboard")}
+            >
               Driver Dashboard
             </Text>
-            <Text className="text-sm font-JakartaMedium text-general-200 dark:text-dark-text-secondary mt-1">
+            <Text className="mt-1 font-JakartaMedium text-sm text-general-200 dark:text-dark-text-secondary">
               {rideRequests.length} pending request{rideRequests.length !== 1 ? "s" : ""}
             </Text>
           </View>
           <TouchableOpacity
             onPress={toggleAvailability}
             className={`rounded-full px-4 py-2 ${
-              isAvailable ? "bg-success-100 dark:bg-success-900/30" : "bg-general-300 dark:bg-dark-border"
+              isAvailable
+                ? "bg-success-100 dark:bg-success-900/30"
+                : "bg-general-300 dark:bg-dark-border"
             }`}
-            {...a11yButton(isAvailable ? "Go offline" : "Go online", isAvailable ? "You are currently online" : "You are currently offline")}
+            {...a11yButton(
+              isAvailable ? "Go offline" : "Go online",
+              isAvailable ? "You are currently online" : "You are currently offline",
+            )}
           >
-            <Text className={`text-sm font-JakartaBold ${
-              isAvailable ? "text-success-600 dark:text-success-400" : "text-general-600 dark:text-dark-text-secondary"
-            }`}>
+            <Text
+              className={`font-JakartaBold text-sm ${
+                isAvailable
+                  ? "text-success-600 dark:text-success-400"
+                  : "text-general-600 dark:text-dark-text-secondary"
+              }`}
+            >
               {isAvailable ? "Online" : "Offline"}
             </Text>
           </TouchableOpacity>
@@ -153,17 +186,17 @@ const DriverHome = () => {
         {loading ? (
           <View className="items-center py-20">
             <ActivityIndicator size="large" color="#0286FF" />
-            <Text className="text-base font-JakartaMedium text-general-200 dark:text-dark-text-secondary mt-3">
+            <Text className="mt-3 font-JakartaMedium text-base text-general-200 dark:text-dark-text-secondary">
               Loading ride requests...
             </Text>
           </View>
         ) : rideRequests.length === 0 ? (
-          <View className="items-center py-20 px-5">
+          <View className="items-center px-5 py-20">
             <Ionicons name="car-outline" size={64} color="#94a3b8" />
-            <Text className="text-lg font-JakartaBold text-secondary-900 dark:text-dark-text mt-4">
+            <Text className="mt-4 font-JakartaBold text-lg text-secondary-900 dark:text-dark-text">
               No ride requests
             </Text>
-            <Text className="text-sm font-JakartaMedium text-general-200 dark:text-dark-text-secondary mt-1 text-center">
+            <Text className="mt-1 text-center font-JakartaMedium text-sm text-general-200 dark:text-dark-text-secondary">
               When riders request rides nearby, they'll appear here.
             </Text>
           </View>
@@ -174,48 +207,55 @@ const DriverHome = () => {
                 key={ride.ride_id}
                 intensity={70}
                 tint={isDark ? "systemMaterialDark" : "systemThinMaterialLight"}
-                className={`rounded-2xl mb-3 p-4 ${useLiquidGlass ? "" : "bg-white dark:bg-dark-card shadow-sm"}`}
+                className={`mb-3 rounded-2xl p-4 ${useLiquidGlass ? "" : "bg-white shadow-sm dark:bg-dark-card"}`}
                 style={useLiquidGlass ? { borderRadius: 16, overflow: "hidden" } : {}}
               >
-                <View className="flex-row items-center justify-between mb-3">
+                <View className="mb-3 flex-row items-center justify-between">
                   <View className="flex-row items-center">
-                    <View className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 items-center justify-center">
+                    <View className="h-10 w-10 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/30">
                       <Ionicons name="person" size={18} color="#0286FF" />
                     </View>
                     <View className="ml-2">
-                      <Text className="text-sm font-JakartaBold text-slate-900 dark:text-dark-text">
+                      <Text className="font-JakartaBold text-sm text-slate-900 dark:text-dark-text">
                         {ride.user?.name || "Rider"}
                       </Text>
-                      <Text className="text-xs font-JakartaMedium text-general-200 dark:text-dark-text-secondary">
+                      <Text className="font-JakartaMedium text-xs text-general-200 dark:text-dark-text-secondary">
                         {formatRideTime(ride.created_at)}
                       </Text>
                     </View>
                   </View>
-                  <Text className="text-lg font-JakartaExtraBold text-primary-500">
-                    {CURRENCY_SYMBOL}{ride.fare_price}
+                  <Text className="font-JakartaExtraBold text-lg text-primary-500">
+                    {CURRENCY_SYMBOL}
+                    {ride.fare_price}
                   </Text>
                 </View>
 
                 <View className="mb-3">
-                  <View className="flex-row items-start mb-2">
-                    <View className="w-2 h-2 rounded-full bg-primary-500 mt-1.5" />
-                    <Text className="ml-2 text-sm font-JakartaMedium text-slate-700 dark:text-dark-text flex-1" numberOfLines={1}>
+                  <View className="mb-2 flex-row items-start">
+                    <View className="mt-1.5 h-2 w-2 rounded-full bg-primary-500" />
+                    <Text
+                      className="ml-2 flex-1 font-JakartaMedium text-sm text-slate-700 dark:text-dark-text"
+                      numberOfLines={1}
+                    >
                       {ride.origin_address}
                     </Text>
                   </View>
                   <View className="flex-row items-start">
-                    <View className="w-2 h-2 rounded-full bg-general-400 mt-1.5" />
-                    <Text className="ml-2 text-sm font-JakartaMedium text-slate-700 dark:text-dark-text flex-1" numberOfLines={1}>
+                    <View className="mt-1.5 h-2 w-2 rounded-full bg-general-400" />
+                    <Text
+                      className="ml-2 flex-1 font-JakartaMedium text-sm text-slate-700 dark:text-dark-text"
+                      numberOfLines={1}
+                    >
                       {ride.destination_address}
                     </Text>
                   </View>
                 </View>
 
-                <View className="flex-row items-center justify-between mb-3">
-                  <Text className="text-xs font-JakartaMedium text-general-200 dark:text-dark-text-secondary">
+                <View className="mb-3 flex-row items-center justify-between">
+                  <Text className="font-JakartaMedium text-xs text-general-200 dark:text-dark-text-secondary">
                     ~{ride.ride_time} min ride
                   </Text>
-                  <Text className="text-xs font-JakartaMedium text-general-200 dark:text-dark-text-secondary">
+                  <Text className="font-JakartaMedium text-xs text-general-200 dark:text-dark-text-secondary">
                     {formatRideTime(ride.created_at)}
                   </Text>
                 </View>

@@ -58,21 +58,24 @@ const PlaceInput = ({
     }
   }, []);
 
-  const onChangeText = useCallback((text: string) => {
-    setQuery(text);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (text.length < 2) {
-      setResults([]);
-      setSearching(false);
-      return;
-    }
-    setSearching(true);
-    debounceRef.current = setTimeout(() => searchPlaces(text), 400);
-  }, [searchPlaces]);
+  const onChangeText = useCallback(
+    (text: string) => {
+      setQuery(text);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (text.length < 2) {
+        setResults([]);
+        setSearching(false);
+        return;
+      }
+      setSearching(true);
+      debounceRef.current = setTimeout(() => searchPlaces(text), 400);
+    },
+    [searchPlaces],
+  );
 
   return (
     <View
-      className={`flex flex-col relative z-50 rounded-xl ${containerStyle}`}
+      className={`relative z-50 flex flex-col rounded-xl ${containerStyle}`}
       accessibilityLabel={initialLocation || "Search destination"}
       accessibilityRole="search"
     >
@@ -83,15 +86,24 @@ const PlaceInput = ({
           paddingHorizontal: 20,
           borderWidth: useLiquidGlass ? 0.5 : 1,
           borderColor: useLiquidGlass
-            ? isDark ? "rgba(255,255,255,0.12)" : "rgba(60,60,67,0.15)"
-            : isDark ? colors.dark.border : "#E2E8F0",
+            ? isDark
+              ? "rgba(255,255,255,0.12)"
+              : "rgba(60,60,67,0.15)"
+            : isDark
+              ? colors.dark.border
+              : "#E2E8F0",
           flexDirection: "row",
           alignItems: "center",
         }}
       >
         {icon && (
-          <View className="justify-center items-center w-6 h-6 mr-2">
-            <Image source={icon} className="w-6 h-6" resizeMode="contain" {...a11y("", "", "none")} />
+          <View className="mr-2 h-6 w-6 items-center justify-center">
+            <Image
+              source={icon}
+              className="h-6 w-6"
+              resizeMode="contain"
+              {...a11y("", "", "none")}
+            />
           </View>
         )}
         <TextInput

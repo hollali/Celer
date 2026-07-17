@@ -19,11 +19,7 @@ interface A11yProps {
   accessibilityState?: AccessibilityState;
 }
 
-export function a11y(
-  label: string,
-  hint?: string,
-  role?: A11yRole
-): A11yProps {
+export function a11y(label: string, hint?: string, role?: A11yRole): A11yProps {
   return {
     accessibilityLabel: label,
     accessibilityHint: hint,
@@ -35,7 +31,7 @@ export function a11yButton(
   label: string,
   hint?: string,
   disabled?: boolean,
-  selected?: boolean
+  selected?: boolean,
 ): A11yProps {
   return {
     accessibilityLabel: label,
@@ -45,11 +41,7 @@ export function a11yButton(
   };
 }
 
-export function a11ySwitch(
-  label: string,
-  checked: boolean,
-  hint?: string
-): A11yProps {
+export function a11ySwitch(label: string, checked: boolean, hint?: string): A11yProps {
   return {
     accessibilityLabel: label,
     accessibilityHint: hint,

@@ -1,9 +1,15 @@
 import sql from "@/lib/neon";
 import { authenticateRequest, unauthorizedResponse } from "@/lib/api-auth";
-import { FARE_RATE_PER_MINUTE, OSRM_BASE } from "@/constants";
+import { BASE_FARE, FARE_RATE_PER_KM, FARE_RATE_PER_MINUTE, OSRM_BASE } from "@/constants";
 
 const VALID_PAYMENT_STATUSES = ["pending", "paid", "failed", "refunded"] as const;
-const VALID_RIDE_STATUSES = ["requested", "accepted", "in_progress", "completed", "canceled"] as const;
+const VALID_RIDE_STATUSES = [
+  "requested",
+  "accepted",
+  "in_progress",
+  "completed",
+  "canceled",
+] as const;
 
 export async function GET(request: Request) {
   try {
@@ -50,7 +56,7 @@ export async function GET(request: Request) {
     }
 
     let response;
-    if (status && VALID_RIDE_STATUSES.includes(status as typeof VALID_RIDE_STATUSES[number])) {
+    if (status && VALID_RIDE_STATUSES.includes(status as (typeof VALID_RIDE_STATUSES)[number])) {
       response = await sql`
         SELECT
           rides.*,
@@ -90,14 +96,17 @@ export async function GET(request: Request) {
       SELECT COUNT(*)::int as total FROM rides WHERE user_id = ${user.dbUserId}
     `;
 
-    return Response.json({
-      data: response,
-      pagination: {
-        page,
-        limit,
-        total: countResult[0]?.total ?? 0,
+    return Response.json(
+      {
+        data: response,
+        pagination: {
+          page,
+          limit,
+          total: countResult[0]?.total ?? 0,
+        },
       },
-    }, { status: 200 });
+      { status: 200 },
+    );
   } catch (e) {
     console.error("GET /ride error:", e);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
@@ -132,8 +141,12 @@ export async function POST(request: Request) {
       return Response.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    if (Math.abs(origin_latitude) > 90 || Math.abs(origin_longitude) > 180 ||
-        Math.abs(destination_latitude) > 90 || Math.abs(destination_longitude) > 180) {
+    if (
+      Math.abs(origin_latitude) > 90 ||
+      Math.abs(origin_longitude) > 180 ||
+      Math.abs(destination_latitude) > 90 ||
+      Math.abs(destination_longitude) > 180
+    ) {
       return Response.json({ error: "Invalid coordinates" }, { status: 400 });
     }
 
@@ -145,25 +158,38 @@ export async function POST(request: Request) {
     }
 
     let ride_time: number;
+    let ride_distance: number;
     try {
       const osrmUrl = `${OSRM_BASE}/route/v1/driving/${origin_longitude},${origin_latitude};${destination_longitude},${destination_latitude}?overview=false`;
       const osrmRes = await fetch(osrmUrl);
       const osrmData = await osrmRes.json();
       const durationSec = osrmData.routes?.[0]?.duration;
+      const distanceMeters = osrmData.routes?.[0]?.distance;
+
       if (typeof durationSec === "number" && durationSec > 0) {
         ride_time = Math.round(durationSec / 60);
       } else {
         ride_time = 10;
       }
+
+      if (typeof distanceMeters === "number" && distanceMeters > 0) {
+        ride_distance = distanceMeters / 1000; // convert meters to km
+      } else {
+        ride_distance = 5;
+      }
     } catch {
       ride_time = 10;
+      ride_distance = 5;
     }
 
     if (ride_time <= 0) {
       ride_time = 1;
     }
 
-    const serverPrice = Math.round(ride_time * FARE_RATE_PER_MINUTE * 100) / 100;
+    const serverPrice =
+      Math.round(
+        (BASE_FARE + ride_distance * FARE_RATE_PER_KM + ride_time * FARE_RATE_PER_MINUTE) * 100,
+      ) / 100;
 
     const response = await sql`
       INSERT INTO rides (
@@ -250,7 +276,10 @@ export async function PATCH(request: Request) {
     return Response.json({ data: response }, { status: 200 });
   } catch (e) {
     console.log("PATCH /ride error:", e);
-    return Response.json({ error: "Internal Server Error", details: (e as Error).message }, { status: 500 });
+    return Response.json(
+      { error: "Internal Server Error", details: (e as Error).message },
+      { status: 500 },
+    );
   }
 }
 

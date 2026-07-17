@@ -28,9 +28,24 @@ const TYPE_BADGE: Record<
   { label: string; icon: keyof typeof Ionicons.glyphMap; bg: string; text: string }
 > = {
   driver: { label: "Driver", icon: "car-outline", bg: "bg-primary-100", text: "text-primary-700" },
-  support: { label: "Support", icon: "headset-outline", bg: "bg-success-100", text: "text-success-600" },
-  safety: { label: "Safety", icon: "shield-checkmark-outline", bg: "bg-danger-100", text: "text-danger-600" },
-  promo: { label: "Offers", icon: "pricetags-outline", bg: "bg-warning-100", text: "text-warning-700" },
+  support: {
+    label: "Support",
+    icon: "headset-outline",
+    bg: "bg-success-100",
+    text: "text-success-600",
+  },
+  safety: {
+    label: "Safety",
+    icon: "shield-checkmark-outline",
+    bg: "bg-danger-100",
+    text: "text-danger-600",
+  },
+  promo: {
+    label: "Offers",
+    icon: "pricetags-outline",
+    bg: "bg-warning-100",
+    text: "text-warning-700",
+  },
 };
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
@@ -46,7 +61,10 @@ const Avatar = ({
   online: boolean;
   size?: number;
 }) => (
-  <View style={{ width: size, height: size }} {...a11y(`${initials}${online ? ", online" : ""}`, "", "image")}>
+  <View
+    style={{ width: size, height: size }}
+    {...a11y(`${initials}${online ? ", online" : ""}`, "", "image")}
+  >
     <View
       style={{
         width: size,
@@ -57,7 +75,7 @@ const Avatar = ({
         justifyContent: "center",
       }}
     >
-      <Text className="text-white font-JakartaBold" style={{ fontSize: size * 0.35 }}>
+      <Text className="font-JakartaBold text-white" style={{ fontSize: size * 0.35 }}>
         {initials}
       </Text>
     </View>
@@ -83,14 +101,14 @@ const ConversationCard = ({ item }: { item: Conversation }) => {
       onPress={() => router.push(`/(root)/messages/${item.id}`)}
       {...a11yButton(
         `${item.name}, ${item.role}${hasUnread ? `, ${item.user_unread} unread messages` : ""}`,
-        "Open conversation"
+        "Open conversation",
       )}
     >
       <Avatar color={item.avatar_color} initials={item.avatar_initials} online={item.online} />
 
-      <View className="flex-1 ml-3">
+      <View className="ml-3 flex-1">
         <View className="flex-row items-center justify-between">
-          <View className="flex-row items-center gap-1.5 flex-shrink">
+          <View className="flex-shrink flex-row items-center gap-1.5">
             <Text
               className={`text-[15px] ${hasUnread ? "font-JakartaBold" : "font-JakartaSemiBold"} text-secondary-900 dark:text-dark-text`}
               numberOfLines={1}
@@ -99,34 +117,51 @@ const ConversationCard = ({ item }: { item: Conversation }) => {
             </Text>
           </View>
           <Text
-            className={`text-[11px] ml-2 ${hasUnread ? "font-JakartaBold text-primary-500" : "font-Jakarta text-secondary-500 dark:text-dark-text-secondary"}`}
+            className={`ml-2 text-[11px] ${hasUnread ? "font-JakartaBold text-primary-500" : "font-Jakarta text-secondary-500 dark:text-dark-text-secondary"}`}
           >
             {formatTimeAgo(item.last_message_at)}
           </Text>
         </View>
 
-        <View className="flex-row items-center gap-1.5 mt-0.5">
-          <View className={`rounded-full px-2 py-0.5 ${badge.bg} dark:opacity-80 flex-row items-center gap-1`}>
-            <Ionicons name={badge.icon} size={8} color={badge.text.includes("primary") ? "#475A99" : badge.text.includes("success") ? "#2F855A" : badge.text.includes("danger") ? "#C53030" : "#A16207"} />
-            <Text className={`text-[9px] font-JakartaBold ${badge.text} dark:text-dark-text`}>
+        <View className="mt-0.5 flex-row items-center gap-1.5">
+          <View
+            className={`rounded-full px-2 py-0.5 ${badge.bg} flex-row items-center gap-1 dark:opacity-80`}
+          >
+            <Ionicons
+              name={badge.icon}
+              size={8}
+              color={
+                badge.text.includes("primary")
+                  ? "#475A99"
+                  : badge.text.includes("success")
+                    ? "#2F855A"
+                    : badge.text.includes("danger")
+                      ? "#C53030"
+                      : "#A16207"
+              }
+            />
+            <Text className={`font-JakartaBold text-[9px] ${badge.text} dark:text-dark-text`}>
               {badge.label}
             </Text>
           </View>
-          <Text className="text-[11px] font-JakartaMedium text-secondary-500 dark:text-dark-text-secondary flex-1">
+          <Text className="flex-1 font-JakartaMedium text-[11px] text-secondary-500 dark:text-dark-text-secondary">
             {item.role}
           </Text>
         </View>
 
-        <View className="flex-row items-center justify-between mt-1">
+        <View className="mt-1 flex-row items-center justify-between">
           <Text
-            className={`text-[13px] flex-1 mr-3 leading-4 ${hasUnread ? "font-JakartaMedium text-secondary-800 dark:text-dark-text" : "font-Jakarta text-secondary-500 dark:text-dark-text-secondary"}`}
+            className={`mr-3 flex-1 text-[13px] leading-4 ${hasUnread ? "font-JakartaMedium text-secondary-800 dark:text-dark-text" : "font-Jakarta text-secondary-500 dark:text-dark-text-secondary"}`}
             numberOfLines={1}
           >
             {item.last_message}
           </Text>
           {hasUnread && (
-            <View className="h-5 min-w-5 rounded-full bg-primary-500 items-center justify-center px-1.5">
-              <Text className="text-[10px] font-JakartaBold text-white" accessibilityLabel={`${item.user_unread} unread`}>
+            <View className="h-5 min-w-5 items-center justify-center rounded-full bg-primary-500 px-1.5">
+              <Text
+                className="font-JakartaBold text-[10px] text-white"
+                accessibilityLabel={`${item.user_unread} unread`}
+              >
                 {item.user_unread}
               </Text>
             </View>
@@ -167,8 +202,8 @@ function getTimeGroup(dateStr: string): "today" | "yesterday" | "older" {
 // ─── Section Header ───────────────────────────────────────────────────────────
 
 const SectionHeader = ({ title }: { title: string }) => (
-  <View className="px-5 pt-5 pb-1.5">
-    <Text className="text-[12px] font-JakartaBold uppercase tracking-[1.5px] text-secondary-500 dark:text-dark-text-secondary">
+  <View className="px-5 pb-1.5 pt-5">
+    <Text className="font-JakartaBold text-[12px] uppercase tracking-[1.5px] text-secondary-500 dark:text-dark-text-secondary">
       {title}
     </Text>
   </View>
@@ -199,14 +234,16 @@ const FilterChip = ({
   <TouchableOpacity
     onPress={onPress}
     activeOpacity={0.7}
-    className={`mr-2.5 rounded-full px-4 py-2 flex-row items-center gap-1.5 ${
-      active ? "bg-secondary-900 dark:bg-primary-500" : "bg-white/60 dark:bg-white/10 border border-secondary-300/40 dark:border-white/15"
+    className={`mr-2.5 flex-row items-center gap-1.5 rounded-full px-4 py-2 ${
+      active
+        ? "bg-secondary-900 dark:bg-primary-500"
+        : "border border-secondary-300/40 bg-white/60 dark:border-white/15 dark:bg-white/10"
     }`}
     {...a11yButton(label, `Filter by ${label}`, false, active)}
   >
     <Ionicons name={icon} size={14} color={active ? "#FFFFFF" : "#8E8E93"} />
     <Text
-      className={`text-[13px] font-JakartaSemiBold ${active ? "text-white" : "text-secondary-500 dark:text-dark-text-secondary"}`}
+      className={`font-JakartaSemiBold text-[13px] ${active ? "text-white" : "text-secondary-500 dark:text-dark-text-secondary"}`}
     >
       {label}
     </Text>
@@ -220,18 +257,18 @@ const ActiveRideBanner = () => {
 
   const bannerContent = (onPress: () => void) => (
     <View className="flex-row items-center">
-      <View className="h-12 w-12 rounded-full bg-primary-500 items-center justify-center">
+      <View className="h-12 w-12 items-center justify-center rounded-full bg-primary-500">
         <Ionicons name="car-sport-outline" size={22} color="white" />
       </View>
       <View className="ml-3 flex-1">
-        <Text className="text-primary-500 dark:text-primary-400 font-JakartaBold text-sm">
+        <Text className="font-JakartaBold text-sm text-primary-500 dark:text-primary-400">
           Active Ride
         </Text>
-        <Text className="text-secondary-500 dark:text-dark-text-secondary text-[11px] font-Jakarta mt-0.5">
+        <Text className="mt-0.5 font-Jakarta text-[11px] text-secondary-500 dark:text-dark-text-secondary">
           Tap to view live trip
         </Text>
       </View>
-      <View className="h-8 w-8 rounded-full bg-primary-500/10 dark:bg-primary-500/20 items-center justify-center">
+      <View className="h-8 w-8 items-center justify-center rounded-full bg-primary-500/10 dark:bg-primary-500/20">
         <Ionicons name="chevron-forward" size={16} color={colors.primary[500]} />
       </View>
     </View>
@@ -258,7 +295,7 @@ const ActiveRideBanner = () => {
   return (
     <TouchableOpacity
       activeOpacity={0.85}
-      className="mx-5 mt-4 rounded-2xl bg-primary-500 p-4 flex-row items-center"
+      className="mx-5 mt-4 flex-row items-center rounded-2xl bg-primary-500 p-4"
       {...a11yButton("Active ride", "Open live trip chat")}
     >
       {bannerContent(() => {})}
@@ -269,14 +306,17 @@ const ActiveRideBanner = () => {
 // ─── Empty State ──────────────────────────────────────────────────────────────
 
 const EmptyState = () => (
-  <View className="flex-1 items-center justify-center py-24" accessibilityLabel="No conversations found">
-    <View className="h-20 w-20 rounded-full bg-general-300 dark:bg-dark-card items-center justify-center">
+  <View
+    className="flex-1 items-center justify-center py-24"
+    accessibilityLabel="No conversations found"
+  >
+    <View className="h-20 w-20 items-center justify-center rounded-full bg-general-300 dark:bg-dark-card">
       <Ionicons name="chatbubbles-outline" size={36} color={colors.general[800]} />
     </View>
-    <Text className="mt-5 text-[17px] font-JakartaSemiBold text-secondary-800 dark:text-dark-text">
+    <Text className="mt-5 font-JakartaSemiBold text-[17px] text-secondary-800 dark:text-dark-text">
       No conversations found
     </Text>
-    <Text className="mt-1.5 text-[13px] font-Jakarta text-secondary-500 dark:text-dark-text-secondary text-center px-10 leading-5">
+    <Text className="mt-1.5 px-10 text-center font-Jakarta text-[13px] leading-5 text-secondary-500 dark:text-dark-text-secondary">
       Start a ride to chat with your driver or contact support.
     </Text>
   </View>
@@ -300,15 +340,18 @@ const HeaderContent = ({
   setActiveFilter: (f: Filter) => void;
 }) => (
   <>
-    <View className="flex-row items-center justify-between mb-4">
+    <View className="mb-4 flex-row items-center justify-between">
       <View>
-        <Text className="text-[28px] font-JakartaExtraBold text-secondary-900 dark:text-dark-text" {...a11yHeader("Messages")}>
+        <Text
+          className="font-JakartaExtraBold text-[28px] text-secondary-900 dark:text-dark-text"
+          {...a11yHeader("Messages")}
+        >
           Messages
         </Text>
         {totalUnread > 0 && (
-          <View className="flex-row items-center gap-1.5 mt-0.5">
+          <View className="mt-0.5 flex-row items-center gap-1.5">
             <View className="h-2 w-2 rounded-full bg-primary-500" />
-            <Text className="text-[12px] font-JakartaMedium text-secondary-500 dark:text-dark-text-secondary">
+            <Text className="font-JakartaMedium text-[12px] text-secondary-500 dark:text-dark-text-secondary">
               {totalUnread} unread
             </Text>
           </View>
@@ -316,34 +359,38 @@ const HeaderContent = ({
       </View>
       <TouchableOpacity
         onPress={() => Alert.alert("Coming Soon", "New message feature coming soon!")}
-        className="h-11 w-11 rounded-full bg-primary-500 items-center justify-center"
+        className="h-11 w-11 items-center justify-center rounded-full bg-primary-500"
         {...a11yButton("New message", "Compose a new message")}
       >
         <Ionicons name="create-outline" size={20} color="white" />
       </TouchableOpacity>
     </View>
 
-    <View className="flex-row items-center bg-general-500 dark:bg-dark-card rounded-2xl px-4 h-11 gap-2">
+    <View className="h-11 flex-row items-center gap-2 rounded-2xl bg-general-500 px-4 dark:bg-dark-card">
       <Ionicons name="search-outline" size={17} color={colors.general[800]} />
       <TextInput
         value={query}
         onChangeText={setQuery}
         placeholder="Search messages"
         placeholderTextColor={colors.general[800]}
-        className="flex-1 text-[14px] font-JakartaMedium text-secondary-800 dark:text-dark-text h-11"
+        className="h-11 flex-1 font-JakartaMedium text-[14px] text-secondary-800 dark:text-dark-text"
         accessibilityLabel="Search conversations"
         returnKeyType="search"
       />
       {query.length > 0 && (
         <TouchableOpacity onPress={() => setQuery("")} {...a11yButton("Clear search")}>
-          <View className="h-5 w-5 rounded-full bg-general-800/30 items-center justify-center">
+          <View className="h-5 w-5 items-center justify-center rounded-full bg-general-800/30">
             <Ionicons name="close" size={12} color={colors.general[800]} />
           </View>
         </TouchableOpacity>
       )}
     </View>
 
-    <View className="flex-row mt-3.5" accessibilityLabel="Filter conversations" accessibilityRole="none">
+    <View
+      className="mt-3.5 flex-row"
+      accessibilityLabel="Filter conversations"
+      accessibilityRole="none"
+    >
       {FILTERS.map((f) => (
         <FilterChip
           key={f.key}
@@ -404,7 +451,7 @@ const Chat = () => {
 
   const totalUnread = useMemo(
     () => convs.reduce((acc, c) => acc + (c.user_unread || 0), 0),
-    [convs]
+    [convs],
   );
 
   const filtered = useMemo(() => {
@@ -434,15 +481,12 @@ const Chat = () => {
     return items;
   }, [sections]);
 
-  const renderItem = useCallback(
-    ({ item }: { item: ListItem }) => {
-      if (item.type === "section") {
-        return <SectionHeader title={item.title} />;
-      }
-      return <ConversationCard item={item.data} />;
-    },
-    []
-  );
+  const renderItem = useCallback(({ item }: { item: ListItem }) => {
+    if (item.type === "section") {
+      return <SectionHeader title={item.title} />;
+    }
+    return <ConversationCard item={item.data} />;
+  }, []);
 
   const keyExtractor = useCallback((item: ListItem, idx: number) => {
     if (item.type === "section") return `section-${item.title}`;
@@ -480,7 +524,7 @@ const Chat = () => {
       );
     }
     return (
-      <View className="px-5 pt-3 pb-4 bg-white dark:bg-dark-bg border-b border-general-300 dark:border-dark-border">
+      <View className="border-b border-general-300 bg-white px-5 pb-4 pt-3 dark:border-dark-border dark:bg-dark-bg">
         <HeaderContent
           totalUnread={totalUnreadHeader ?? 0}
           isDark={isDark}
@@ -500,21 +544,24 @@ const Chat = () => {
       {loading && conversations === null ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color={colors.primary[500]} />
-          <Text className="mt-3 text-sm font-JakartaMedium text-secondary-500 dark:text-dark-text-secondary">
+          <Text className="mt-3 font-JakartaMedium text-sm text-secondary-500 dark:text-dark-text-secondary">
             Loading messages...
           </Text>
         </View>
       ) : error && !conversations ? (
         <View className="flex-1 items-center justify-center px-5">
           <Ionicons name="cloud-offline-outline" size={48} color="#9CA3AF" />
-          <Text className="mt-3 text-base font-JakartaBold text-secondary-900 dark:text-dark-text text-center">
+          <Text className="mt-3 text-center font-JakartaBold text-base text-secondary-900 dark:text-dark-text">
             Unable to load conversations
           </Text>
-          <Text className="mt-1 text-sm font-JakartaMedium text-general-200 dark:text-dark-text-secondary text-center">
+          <Text className="mt-1 text-center font-JakartaMedium text-sm text-general-200 dark:text-dark-text-secondary">
             {error}
           </Text>
-          <TouchableOpacity onPress={refetch} className="mt-4 bg-primary-500 rounded-full px-6 py-3">
-            <Text className="text-sm font-JakartaBold text-white">Retry</Text>
+          <TouchableOpacity
+            onPress={refetch}
+            className="mt-4 rounded-full bg-primary-500 px-6 py-3"
+          >
+            <Text className="font-JakartaBold text-sm text-white">Retry</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -534,9 +581,7 @@ const Chat = () => {
               colors={[colors.primary[500]]}
             />
           }
-          contentContainerStyle={
-            flatData.length === 0 ? { flex: 1 } : { paddingBottom: 100 }
-          }
+          contentContainerStyle={flatData.length === 0 ? { flex: 1 } : { paddingBottom: 100 }}
           ItemSeparatorComponent={() => null}
         />
       )}
@@ -544,7 +589,7 @@ const Chat = () => {
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={() => router.push("/help")}
-        className="absolute bottom-8 right-5 h-14 w-14 rounded-full bg-secondary-900 dark:bg-primary-500 items-center justify-center shadow-lg"
+        className="absolute bottom-8 right-5 h-14 w-14 items-center justify-center rounded-full bg-secondary-900 shadow-lg dark:bg-primary-500"
         style={{
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 4 },

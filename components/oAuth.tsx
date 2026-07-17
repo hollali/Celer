@@ -7,60 +7,60 @@ import { googleOAuth } from "@/lib/auth";
 import { a11y } from "@/lib/accessibility";
 
 const OAuth = () => {
-	const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
-	const { getToken } = useAuth();
+  const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
+  const { getToken } = useAuth();
 
-	const handleGoogleSignIn = async () => {
-		const result = await googleOAuth(startOAuthFlow, getToken);
+  const handleGoogleSignIn = async () => {
+    const result = await googleOAuth(startOAuthFlow, getToken);
 
-		if (result.code === "session_exists") {
-			Alert.alert("Success", "You're already signed in. Redirecting to home screen.");
-			router.replace("/(root)/(tabs)/home");
-			return;
-		}
+    if (result.code === "session_exists") {
+      Alert.alert("Success", "You're already signed in. Redirecting to home screen.");
+      router.replace("/(root)/(tabs)/home");
+      return;
+    }
 
-		Alert.alert(result.success ? "Success" : "Error", result.message);
+    Alert.alert(result.success ? "Success" : "Error", result.message);
 
-		if (result.success) {
-			router.replace("/(root)/(tabs)/home");
-		}
-	};
+    if (result.success) {
+      router.replace("/(root)/(tabs)/home");
+    }
+  };
 
-	return (
-		<View>
-			<View
-				className="flex flex-row justify-center items-center mt-4 gap-x-3"
-				accessibilityLabel="or sign in with"
-				accessibilityRole="none"
-			>
-				<View
-					className="flex-1 h-[1px] bg-general-100 dark:bg-dark-border"
-					accessibilityRole="none"
-				/>
-				<Text className="text-lg dark:text-dark-text">Or</Text>
-				<View
-					className="flex-1 h-[1px] bg-general-100 dark:bg-dark-border"
-					accessibilityRole="none"
-				/>
-			</View>
+  return (
+    <View>
+      <View
+        className="mt-4 flex flex-row items-center justify-center gap-x-3"
+        accessibilityLabel="or sign in with"
+        accessibilityRole="none"
+      >
+        <View
+          className="h-[1px] flex-1 bg-general-100 dark:bg-dark-border"
+          accessibilityRole="none"
+        />
+        <Text className="text-lg dark:text-dark-text">Or</Text>
+        <View
+          className="h-[1px] flex-1 bg-general-100 dark:bg-dark-border"
+          accessibilityRole="none"
+        />
+      </View>
 
-			<CustomButton
-				title="Log In with Google"
-				className="mt-5 w-full shadow-none"
-				IconLeft={() => (
-					<Image
-						source={icons.google}
-						resizeMode="contain"
-						className="w-5 h-5 mx-2"
-						{...a11y("Google logo", "", "image")}
-					/>
-				)}
-				bgVariant="outline"
-				textVariant="primary"
-				onPress={handleGoogleSignIn}
-			/>
-		</View>
-	);
+      <CustomButton
+        title="Log In with Google"
+        className="mt-5 w-full shadow-none"
+        IconLeft={() => (
+          <Image
+            source={icons.google}
+            resizeMode="contain"
+            className="mx-2 h-5 w-5"
+            {...a11y("Google logo", "", "image")}
+          />
+        )}
+        bgVariant="outline"
+        textVariant="primary"
+        onPress={handleGoogleSignIn}
+      />
+    </View>
+  );
 };
 
 export default OAuth;

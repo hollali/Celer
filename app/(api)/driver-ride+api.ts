@@ -16,11 +16,14 @@ export async function GET(request: Request) {
 
     if (action === "check_status") {
       const driver = await findDriverByEmail(user.email);
-      return Response.json({
-        data: driver
-          ? { exists: true, status: driver.status, driver_id: driver.id }
-          : { exists: false, status: null, driver_id: null },
-      }, { status: 200 });
+      return Response.json(
+        {
+          data: driver
+            ? { exists: true, status: driver.status, driver_id: driver.id }
+            : { exists: false, status: null, driver_id: null },
+        },
+        { status: 200 },
+      );
     }
 
     const driver = await findDriverByEmail(user.email);
@@ -30,7 +33,10 @@ export async function GET(request: Request) {
 
     if (action === "pending" || action === "active" || action === "earnings") {
       if (driver.status !== "approved") {
-        return Response.json({ error: "Driver account not approved", status: driver.status }, { status: 403 });
+        return Response.json(
+          { error: "Driver account not approved", status: driver.status },
+          { status: 403 },
+        );
       }
     }
 
@@ -121,16 +127,19 @@ export async function GET(request: Request) {
         LIMIT 10
       `;
 
-      return Response.json({
-        data: {
-          total_earnings: totalResult[0]?.total_earnings || 0,
-          total_rides: totalResult[0]?.total_rides || 0,
-          today_earnings: todayResult[0]?.today_earnings || 0,
-          today_rides: todayResult[0]?.today_rides || 0,
-          week_earnings: weekResult[0]?.week_earnings || 0,
-          recent_rides: recentRides,
+      return Response.json(
+        {
+          data: {
+            total_earnings: totalResult[0]?.total_earnings || 0,
+            total_rides: totalResult[0]?.total_rides || 0,
+            today_earnings: todayResult[0]?.today_earnings || 0,
+            today_rides: todayResult[0]?.today_rides || 0,
+            week_earnings: weekResult[0]?.week_earnings || 0,
+            recent_rides: recentRides,
+          },
         },
-      }, { status: 200 });
+        { status: 200 },
+      );
     }
 
     if (action === "profile") {
@@ -145,7 +154,8 @@ export async function GET(request: Request) {
     }
 
     return Response.json({ error: "Invalid action" }, { status: 400 });
-  } catch {
+  } catch (err) {
+    console.error("GET /driver-ride error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -160,18 +170,40 @@ export async function POST(request: Request) {
 
     if (action === "register_driver") {
       const {
-        first_name, last_name, phone, email, vehicle_type,
-        vehicle_make, vehicle_model, vehicle_year, vehicle_color,
-        vehicle_plate, car_seats, license_number, documents,
+        first_name,
+        last_name,
+        phone,
+        email,
+        vehicle_type,
+        vehicle_make,
+        vehicle_model,
+        vehicle_year,
+        vehicle_color,
+        vehicle_plate,
+        car_seats,
+        license_number,
+        documents,
       } = body;
 
-      if (!first_name || !last_name || !phone || !email || !vehicle_make || !vehicle_model || !vehicle_plate || !license_number) {
+      if (
+        !first_name ||
+        !last_name ||
+        !phone ||
+        !email ||
+        !vehicle_make ||
+        !vehicle_model ||
+        !vehicle_plate ||
+        !license_number
+      ) {
         return Response.json({ error: "Missing required fields" }, { status: 400 });
       }
 
       const existing = await findDriverByEmail(email);
       if (existing) {
-        return Response.json({ error: "A driver application already exists for this email" }, { status: 409 });
+        return Response.json(
+          { error: "A driver application already exists for this email" },
+          { status: 409 },
+        );
       }
 
       const docsJson = JSON.stringify(documents || {});
@@ -186,18 +218,21 @@ export async function POST(request: Request) {
           ${user.clerkId}, ${first_name}, ${last_name}, ${phone}, ${email},
           ${vehicle_type || "Economy"}, ${vehicle_make}, ${vehicle_model}, ${vehicle_year || null},
           ${vehicle_color}, ${vehicle_plate}, ${car_seats || 4}, ${license_number},
-          ${docsJson}::jsonb, 'approved', NOW(), ${documents?.profile_photo || null}
+          ${docsJson}::jsonb, 'pending', NOW(), ${documents?.profile_photo || null}
         )
         RETURNING id, status
       `;
 
-      return Response.json({
-        data: {
-          driver_id: result[0].id,
-          status: result[0].status,
-          message: "Driver application submitted successfully",
+      return Response.json(
+        {
+          data: {
+            driver_id: result[0].id,
+            status: result[0].status,
+            message: "Driver application submitted successfully",
+          },
         },
-      }, { status: 201 });
+        { status: 201 },
+      );
     }
 
     const driver = await findDriverByEmail(user.email);
@@ -206,7 +241,10 @@ export async function POST(request: Request) {
     }
 
     if (driver.status !== "approved") {
-      return Response.json({ error: "Driver account not approved", status: driver.status }, { status: 403 });
+      return Response.json(
+        { error: "Driver account not approved", status: driver.status },
+        { status: 403 },
+      );
     }
 
     const driverId = driver.id;
@@ -226,7 +264,10 @@ export async function POST(request: Request) {
       if (result.length === 0) {
         return Response.json({ error: "Ride not available or already taken" }, { status: 400 });
       }
-      return Response.json({ data: { accepted: true, ride_id: result[0].ride_id } }, { status: 200 });
+      return Response.json(
+        { data: { accepted: true, ride_id: result[0].ride_id } },
+        { status: 200 },
+      );
     }
 
     if (action === "decline") {
@@ -245,7 +286,10 @@ export async function POST(request: Request) {
       if (result.length === 0) {
         return Response.json({ error: "Ride not found or not in accepted state" }, { status: 400 });
       }
-      return Response.json({ data: { started: true, ride_id: result[0].ride_id } }, { status: 200 });
+      return Response.json(
+        { data: { started: true, ride_id: result[0].ride_id } },
+        { status: 200 },
+      );
     }
 
     if (action === "complete") {
@@ -260,7 +304,10 @@ export async function POST(request: Request) {
       if (result.length === 0) {
         return Response.json({ error: "Ride not found or not in progress" }, { status: 400 });
       }
-      return Response.json({ data: { completed: true, ride_id: result[0].ride_id } }, { status: 200 });
+      return Response.json(
+        { data: { completed: true, ride_id: result[0].ride_id } },
+        { status: 200 },
+      );
     }
 
     if (action === "cancel") {
@@ -276,7 +323,10 @@ export async function POST(request: Request) {
       if (result.length === 0) {
         return Response.json({ error: "Ride not found or cannot be canceled" }, { status: 400 });
       }
-      return Response.json({ data: { canceled: true, ride_id: result[0].ride_id } }, { status: 200 });
+      return Response.json(
+        { data: { canceled: true, ride_id: result[0].ride_id } },
+        { status: 200 },
+      );
     }
 
     if (action === "toggle_availability") {
@@ -288,7 +338,8 @@ export async function POST(request: Request) {
     }
 
     return Response.json({ error: "Invalid action" }, { status: 400 });
-  } catch {
+  } catch (err) {
+    console.error("POST /driver-ride error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

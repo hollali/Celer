@@ -11,7 +11,8 @@ export async function GET(request: Request) {
     `;
 
     return Response.json({ data: places }, { status: 200 });
-  } catch {
+  } catch (err) {
+    console.error("GET /saved-places error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -28,7 +29,8 @@ export async function POST(request: Request) {
       return Response.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const count = await sql`SELECT COUNT(*)::int as cnt FROM saved_places WHERE user_id = ${user.dbUserId}`;
+    const count =
+      await sql`SELECT COUNT(*)::int as cnt FROM saved_places WHERE user_id = ${user.dbUserId}`;
     if ((count[0]?.cnt ?? 0) >= 10) {
       return Response.json({ error: "Maximum 10 saved places" }, { status: 400 });
     }
@@ -40,7 +42,8 @@ export async function POST(request: Request) {
     `;
 
     return Response.json({ data: result[0] }, { status: 201 });
-  } catch {
+  } catch (err) {
+    console.error("POST /saved-places error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -60,7 +63,8 @@ export async function DELETE(request: Request) {
     await sql`DELETE FROM saved_places WHERE id = ${parseInt(placeId)} AND user_id = ${user.dbUserId}`;
 
     return Response.json({ data: { deleted: true } }, { status: 200 });
-  } catch {
+  } catch (err) {
+    console.error("DELETE /saved-places error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

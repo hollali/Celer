@@ -37,8 +37,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     SecureStore.setItem(THEME_STORAGE_KEY, mode);
   };
 
-  const resolvedTheme: Theme =
-    colorScheme ?? deviceScheme ?? "light";
+  const resolvedTheme: Theme = colorScheme ?? deviceScheme ?? "light";
 
   const isIOS = Platform.OS === "ios";
   const useLiquidGlass = isIOS;

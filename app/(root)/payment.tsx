@@ -32,7 +32,12 @@ const Payment = () => {
   const { isDark } = useTheme();
   const { getToken, isLoaded } = useAuth();
 
-  const { data: rides, loading, refetch, error } = useFetch<Ride[]>("/(api)/ride", getToken, isLoaded);
+  const {
+    data: rides,
+    loading,
+    refetch,
+    error,
+  } = useFetch<Ride[]>("/(api)/ride", getToken, isLoaded);
 
   const [ride, setRide] = useState<Ride | null>(null);
   const [processing, setProcessing] = useState(false);
@@ -53,7 +58,7 @@ const Payment = () => {
 
   const pendingRides = useMemo(
     () => (rides || []).filter((r) => r.payment_status === "pending"),
-    [rides]
+    [rides],
   );
 
   const selectedRide = ride || pendingRides[0] || null;
@@ -73,13 +78,17 @@ const Payment = () => {
 
     try {
       const token = await getToken();
-      const initResult = await fetchAPI("/(api)/paystack", {
-        method: "POST",
-        body: JSON.stringify({
-          action: "initialize",
-          rideData: { ride_id: selectedRide.ride_id },
-        }),
-      }, token);
+      const initResult = await fetchAPI(
+        "/(api)/paystack",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            action: "initialize",
+            rideData: { ride_id: selectedRide.ride_id },
+          }),
+        },
+        token,
+      );
 
       if (!initResult.authorization_url) {
         Alert.alert("Error", initResult.error || "Failed to initialize payment");
@@ -90,13 +99,12 @@ const Payment = () => {
 
       const result = await WebBrowser.openAuthSessionAsync(
         initResult.authorization_url,
-        "celer://payment/callback"
+        "celer://payment/callback",
       );
 
       if (result.type === "success") {
         const url = new URL(result.url);
-        const reference =
-          url.searchParams.get("reference") || initResult.reference;
+        const reference = url.searchParams.get("reference") || initResult.reference;
 
         if (!reference) {
           Alert.alert("Error", "Payment reference not found. Please try again.");
@@ -105,10 +113,14 @@ const Payment = () => {
           return;
         }
 
-        const verifyResult = await fetchAPI("/(api)/paystack", {
-          method: "POST",
-          body: JSON.stringify({ action: "verify", reference }),
-        }, token);
+        const verifyResult = await fetchAPI(
+          "/(api)/paystack",
+          {
+            method: "POST",
+            body: JSON.stringify({ action: "verify", reference }),
+          },
+          token,
+        );
 
         if (verifyResult.verified) {
           const success = await markAsPaid(selectedRide.ride_id);
@@ -122,10 +134,7 @@ const Payment = () => {
             ]);
           }
         } else {
-          Alert.alert(
-            "Payment failed",
-            verifyResult.error || "Could not verify payment"
-          );
+          Alert.alert("Payment failed", verifyResult.error || "Could not verify payment");
           setPaymentFailed(true);
         }
       } else {
@@ -146,29 +155,25 @@ const Payment = () => {
       return;
     }
 
-    Alert.alert(
-      "Pay with Cash",
-      "You'll pay the driver directly in cash after the trip.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Confirm Cash Payment",
-          onPress: async () => {
-            setProcessing(true);
-            const success = await markAsPaid(selectedRide.ride_id);
-            setProcessing(false);
-            if (success) {
-              Alert.alert("Trip Confirmed", "Your driver will expect cash payment upon arrival.", [
-                {
-                  text: "OK",
-                  onPress: () => router.replace("/(root)/(tabs)/rides"),
-                },
-              ]);
-            }
-          },
+    Alert.alert("Pay with Cash", "You'll pay the driver directly in cash after the trip.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Confirm Cash Payment",
+        onPress: async () => {
+          setProcessing(true);
+          const success = await markAsPaid(selectedRide.ride_id);
+          setProcessing(false);
+          if (success) {
+            Alert.alert("Trip Confirmed", "Your driver will expect cash payment upon arrival.", [
+              {
+                text: "OK",
+                onPress: () => router.replace("/(root)/(tabs)/rides"),
+              },
+            ]);
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handlePayWithMomo = async () => {
@@ -187,15 +192,19 @@ const Payment = () => {
 
     try {
       const token = await getToken();
-      const initResult = await fetchAPI("/(api)/paystack", {
-        method: "POST",
-        body: JSON.stringify({
-          action: "initialize_momo",
-          rideData: { ride_id: selectedRide.ride_id },
-          phone: cleanPhone,
-          provider: momoProvider,
-        }),
-      }, token);
+      const initResult = await fetchAPI(
+        "/(api)/paystack",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            action: "initialize_momo",
+            rideData: { ride_id: selectedRide.ride_id },
+            phone: cleanPhone,
+            provider: momoProvider,
+          }),
+        },
+        token,
+      );
 
       if (!initResult.authorization_url) {
         Alert.alert("Error", initResult.error || "Failed to initialize Mobile Money payment");
@@ -206,13 +215,12 @@ const Payment = () => {
 
       const result = await WebBrowser.openAuthSessionAsync(
         initResult.authorization_url,
-        "celer://payment/callback"
+        "celer://payment/callback",
       );
 
       if (result.type === "success") {
         const url = new URL(result.url);
-        const reference =
-          url.searchParams.get("reference") || initResult.reference;
+        const reference = url.searchParams.get("reference") || initResult.reference;
 
         if (!reference) {
           Alert.alert("Error", "Payment reference not found. Please try again.");
@@ -221,10 +229,14 @@ const Payment = () => {
           return;
         }
 
-        const verifyResult = await fetchAPI("/(api)/paystack", {
-          method: "POST",
-          body: JSON.stringify({ action: "verify", reference }),
-        }, token);
+        const verifyResult = await fetchAPI(
+          "/(api)/paystack",
+          {
+            method: "POST",
+            body: JSON.stringify({ action: "verify", reference }),
+          },
+          token,
+        );
 
         if (verifyResult.verified) {
           const success = await markAsPaid(selectedRide.ride_id);
@@ -238,10 +250,7 @@ const Payment = () => {
             ]);
           }
         } else {
-          Alert.alert(
-            "Payment failed",
-            verifyResult.error || "Could not verify payment"
-          );
+          Alert.alert("Payment failed", verifyResult.error || "Could not verify payment");
           setPaymentFailed(true);
         }
       } else {
@@ -263,13 +272,17 @@ const Payment = () => {
         Alert.alert("Error", "Not authenticated. Please sign in again.");
         return false;
       }
-      await fetchAPI("/(api)/ride", {
-        method: "PATCH",
-        body: JSON.stringify({
-          ride_id: Number(rideId),
-          payment_status: "paid",
-        }),
-      }, token);
+      await fetchAPI(
+        "/(api)/ride",
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            ride_id: Number(rideId),
+            payment_status: "paid",
+          }),
+        },
+        token,
+      );
       return true;
     } catch (e) {
       console.log("markAsPaid error:", e);
@@ -288,9 +301,13 @@ const Payment = () => {
         onPress: async () => {
           try {
             const token = await getToken();
-            await fetchAPI(`/(api)/ride?ride_id=${selectedRide.ride_id}`, {
-              method: "DELETE",
-            }, token);
+            await fetchAPI(
+              `/(api)/ride?ride_id=${selectedRide.ride_id}`,
+              {
+                method: "DELETE",
+              },
+              token,
+            );
             Alert.alert("Ride Canceled", "Your ride has been canceled.", [
               { text: "OK", onPress: () => router.replace("/(root)/(tabs)/rides") },
             ]);
@@ -304,11 +321,14 @@ const Payment = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-dark-bg">
-      <View className="flex-row items-center px-5 py-4 bg-white dark:bg-dark-card border-b border-slate-100 dark:border-dark-border">
+      <View className="flex-row items-center border-b border-slate-100 bg-white px-5 py-4 dark:border-dark-border dark:bg-dark-card">
         <TouchableOpacity onPress={() => router.back()} {...a11yButton("Go back")}>
           <Ionicons name="chevron-back" size={22} color={isDark ? "#F5F5F7" : "#0F172A"} />
         </TouchableOpacity>
-        <Text className="ml-4 text-lg font-JakartaBold text-slate-900 dark:text-dark-text" {...a11yHeader("Payment")}>
+        <Text
+          className="ml-4 font-JakartaBold text-lg text-slate-900 dark:text-dark-text"
+          {...a11yHeader("Payment")}
+        >
           Payment
         </Text>
       </View>
@@ -326,51 +346,53 @@ const Payment = () => {
         }
       >
         {error && (
-          <View className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl">
-            <Text className="text-red-600 dark:text-red-400 font-JakartaMedium text-center">
+          <View className="mt-4 rounded-xl bg-red-50 p-4 dark:bg-red-900/20">
+            <Text className="text-center font-JakartaMedium text-red-600 dark:text-red-400">
               {error}
             </Text>
             <TouchableOpacity onPress={refetch} className="mt-2">
-              <Text className="text-primary-500 text-center font-JakartaBold">Retry</Text>
+              <Text className="text-center font-JakartaBold text-primary-500">Retry</Text>
             </TouchableOpacity>
           </View>
         )}
         {selectedRide ? (
           <>
-            <View className="mt-5 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 p-4">
+            <View className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-700/30 dark:bg-amber-900/20">
               <View className="flex-row items-center">
                 <Ionicons name="information-circle" size={20} color="#d97706" />
-                <Text className="text-sm font-JakartaMedium text-amber-700 dark:text-amber-400 ml-2">
+                <Text className="ml-2 font-JakartaMedium text-sm text-amber-700 dark:text-amber-400">
                   Pay after your trip — settle up once you arrive
                 </Text>
               </View>
             </View>
 
             {/* Ride details */}
-            <View className="mt-4 rounded-2xl bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4">
-              <Text className="text-sm font-JakartaBold text-slate-400 dark:text-dark-text-secondary uppercase tracking-wider mb-3">
+            <View className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card">
+              <Text className="mb-3 font-JakartaBold text-sm uppercase tracking-wider text-slate-400 dark:text-dark-text-secondary">
                 Trip details
               </Text>
 
-              <View className="flex-row items-start mb-3">
-                <View className="w-2 h-2 rounded-full bg-primary-500 mt-2" />
+              <View className="mb-3 flex-row items-start">
+                <View className="mt-2 h-2 w-2 rounded-full bg-primary-500" />
                 <View className="ml-3 flex-1">
-                  <Text className="text-sm font-JakartaMedium text-slate-500 dark:text-dark-text-secondary">
+                  <Text className="font-JakartaMedium text-sm text-slate-500 dark:text-dark-text-secondary">
                     From
                   </Text>
-                  <Text className="text-base font-JakartaSemiBold text-slate-900 dark:text-dark-text">
+                  <Text className="font-JakartaSemiBold text-base text-slate-900 dark:text-dark-text">
                     {selectedRide.origin_address}
                   </Text>
                 </View>
               </View>
 
-              <View className="h-6 border-l-2 border-dashed border-slate-300 dark:border-dark-border ml-[3px] mb-3" />
+              <View className="mb-3 ml-[3px] h-6 border-l-2 border-dashed border-slate-300 dark:border-dark-border" />
 
-              <View className="flex-row items-start mb-3">
-                <View className="w-2 h-2 rounded-full bg-general-400 mt-2" />
+              <View className="mb-3 flex-row items-start">
+                <View className="mt-2 h-2 w-2 rounded-full bg-general-400" />
                 <View className="ml-3 flex-1">
-                  <Text className="text-sm font-JakartaMedium text-slate-500 dark:text-dark-text-secondary">To</Text>
-                  <Text className="text-base font-JakartaSemiBold text-slate-900 dark:text-dark-text">
+                  <Text className="font-JakartaMedium text-sm text-slate-500 dark:text-dark-text-secondary">
+                    To
+                  </Text>
+                  <Text className="font-JakartaSemiBold text-base text-slate-900 dark:text-dark-text">
                     {selectedRide.destination_address}
                   </Text>
                 </View>
@@ -379,15 +401,15 @@ const Payment = () => {
 
             {/* Driver info */}
             {selectedRide.driver && (
-              <View className="mt-4 rounded-2xl bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4 flex-row items-center">
-                <View className="w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-800 items-center justify-center">
+              <View className="mt-4 flex-row items-center rounded-2xl border border-slate-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card">
+                <View className="h-12 w-12 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-800">
                   <Ionicons name="person" size={22} color="#0286FF" />
                 </View>
                 <View className="ml-3 flex-1">
-                  <Text className="text-base font-JakartaSemiBold text-slate-900 dark:text-dark-text">
+                  <Text className="font-JakartaSemiBold text-base text-slate-900 dark:text-dark-text">
                     {selectedRide.driver.first_name} {selectedRide.driver.last_name}
                   </Text>
-                  <Text className="text-sm font-JakartaMedium text-slate-500 dark:text-dark-text-secondary">
+                  <Text className="font-JakartaMedium text-sm text-slate-500 dark:text-dark-text-secondary">
                     {selectedRide.driver.car_seats} seats
                   </Text>
                 </View>
@@ -395,35 +417,42 @@ const Payment = () => {
             )}
 
             {/* Fare summary */}
-            <View className="mt-4 rounded-2xl bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4">
-              <Text className="text-sm font-JakartaBold text-slate-400 dark:text-dark-text-secondary uppercase tracking-wider mb-3" {...a11yHeader("Fare summary")}>
+            <View className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card">
+              <Text
+                className="mb-3 font-JakartaBold text-sm uppercase tracking-wider text-slate-400 dark:text-dark-text-secondary"
+                {...a11yHeader("Fare summary")}
+              >
                 Fare summary
               </Text>
 
-              <View className="flex-row justify-between items-center py-2">
-                <Text className="text-base font-JakartaMedium text-slate-700 dark:text-dark-text">
+              <View className="flex-row items-center justify-between py-2">
+                <Text className="font-JakartaMedium text-base text-slate-700 dark:text-dark-text">
                   Fare
                 </Text>
-                <Text className="text-base font-JakartaSemiBold text-slate-900 dark:text-dark-text">
-                  {CURRENCY_SYMBOL}{selectedRide.fare_price}
+                <Text className="font-JakartaSemiBold text-base text-slate-900 dark:text-dark-text">
+                  {CURRENCY_SYMBOL}
+                  {selectedRide.fare_price}
                 </Text>
               </View>
 
-              <View className="flex-row justify-between items-center py-2">
-                <Text className="text-base font-JakartaMedium text-slate-700 dark:text-dark-text">
+              <View className="flex-row items-center justify-between py-2">
+                <Text className="font-JakartaMedium text-base text-slate-700 dark:text-dark-text">
                   Duration
                 </Text>
-                <Text className="text-base font-JakartaSemiBold text-slate-900 dark:text-dark-text">
+                <Text className="font-JakartaSemiBold text-base text-slate-900 dark:text-dark-text">
                   {formatTime(selectedRide.ride_time)}
                 </Text>
               </View>
 
-              <View className="h-px bg-slate-100 dark:bg-dark-border my-2" />
+              <View className="my-2 h-px bg-slate-100 dark:bg-dark-border" />
 
-              <View className="flex-row justify-between items-center py-1">
-                <Text className="text-lg font-JakartaBold text-slate-900 dark:text-dark-text">Total</Text>
-                <Text className="text-xl font-JakartaExtraBold text-primary-500">
-                  {CURRENCY_SYMBOL}{selectedRide.fare_price}
+              <View className="flex-row items-center justify-between py-1">
+                <Text className="font-JakartaBold text-lg text-slate-900 dark:text-dark-text">
+                  Total
+                </Text>
+                <Text className="font-JakartaExtraBold text-xl text-primary-500">
+                  {CURRENCY_SYMBOL}
+                  {selectedRide.fare_price}
                 </Text>
               </View>
             </View>
@@ -431,10 +460,10 @@ const Payment = () => {
         ) : (
           <View className="items-center py-16">
             <Ionicons name="card-outline" size={48} color="#94a3b8" />
-            <Text className="text-lg font-JakartaMedium text-slate-500 dark:text-dark-text-secondary mt-4">
+            <Text className="mt-4 font-JakartaMedium text-lg text-slate-500 dark:text-dark-text-secondary">
               No pending payments
             </Text>
-            <Text className="text-sm font-Jakarta text-slate-400 dark:text-dark-text-tertiary mt-1 text-center">
+            <Text className="mt-1 text-center font-Jakarta text-sm text-slate-400 dark:text-dark-text-tertiary">
               All your rides have been paid for.
             </Text>
             <CustomButton
@@ -446,7 +475,7 @@ const Payment = () => {
         )}
 
         {/* Payment method selector */}
-        <Text className="mt-6 mb-3 text-xs font-JakartaBold uppercase tracking-widest text-slate-400 dark:text-dark-text-secondary">
+        <Text className="mb-3 mt-6 font-JakartaBold text-xs uppercase tracking-widest text-slate-400 dark:text-dark-text-secondary">
           Payment method
         </Text>
 
@@ -454,20 +483,35 @@ const Payment = () => {
           <TouchableOpacity
             onPress={() => setPaymentMethod("paystack")}
             activeOpacity={0.7}
-            className={`flex-1 rounded-2xl border p-3 items-center ${
+            className={`flex-1 items-center rounded-2xl border p-3 ${
               paymentMethod === "paystack"
-                ? "bg-primary-100 dark:bg-primary-900/30 border-primary-500"
-                : "bg-white dark:bg-dark-card border-slate-200 dark:border-dark-border"
+                ? "border-primary-500 bg-primary-100 dark:bg-primary-900/30"
+                : "border-slate-200 bg-white dark:border-dark-border dark:bg-dark-card"
             }`}
-            {...a11yButton("Paystack", "Pay online with Paystack", false, paymentMethod === "paystack")}
+            {...a11yButton(
+              "Paystack",
+              "Pay online with Paystack",
+              false,
+              paymentMethod === "paystack",
+            )}
           >
-            <View className={`h-10 w-10 rounded-full items-center justify-center ${paymentMethod === "paystack" ? "bg-primary-500" : "bg-slate-100 dark:bg-dark-bg"}`}>
-              <Ionicons name="card-outline" size={20} color={paymentMethod === "paystack" ? "#FFFFFF" : isDark ? "#F5F5F7" : "#0F172A"} />
+            <View
+              className={`h-10 w-10 items-center justify-center rounded-full ${paymentMethod === "paystack" ? "bg-primary-500" : "bg-slate-100 dark:bg-dark-bg"}`}
+            >
+              <Ionicons
+                name="card-outline"
+                size={20}
+                color={paymentMethod === "paystack" ? "#FFFFFF" : isDark ? "#F5F5F7" : "#0F172A"}
+              />
             </View>
-            <Text className={`mt-2 text-xs font-JakartaSemiBold ${paymentMethod === "paystack" ? "text-primary-700 dark:text-primary-300" : "text-slate-900 dark:text-dark-text"}`}>
+            <Text
+              className={`mt-2 font-JakartaSemiBold text-xs ${paymentMethod === "paystack" ? "text-primary-700 dark:text-primary-300" : "text-slate-900 dark:text-dark-text"}`}
+            >
               Paystack
             </Text>
-            <Text className={`text-[10px] font-JakartaMedium mt-0.5 ${paymentMethod === "paystack" ? "text-primary-600 dark:text-primary-400" : "text-slate-500 dark:text-dark-text-secondary"}`}>
+            <Text
+              className={`mt-0.5 font-JakartaMedium text-[10px] ${paymentMethod === "paystack" ? "text-primary-600 dark:text-primary-400" : "text-slate-500 dark:text-dark-text-secondary"}`}
+            >
               Card
             </Text>
           </TouchableOpacity>
@@ -475,20 +519,35 @@ const Payment = () => {
           <TouchableOpacity
             onPress={() => setPaymentMethod("momo")}
             activeOpacity={0.7}
-            className={`flex-1 rounded-2xl border p-3 items-center ${
+            className={`flex-1 items-center rounded-2xl border p-3 ${
               paymentMethod === "momo"
-                ? "bg-primary-100 dark:bg-primary-900/30 border-primary-500"
-                : "bg-white dark:bg-dark-card border-slate-200 dark:border-dark-border"
+                ? "border-primary-500 bg-primary-100 dark:bg-primary-900/30"
+                : "border-slate-200 bg-white dark:border-dark-border dark:bg-dark-card"
             }`}
-            {...a11yButton("Mobile Money", "Pay with MTN MoMo, Vodafone, or AirtelTigo", false, paymentMethod === "momo")}
+            {...a11yButton(
+              "Mobile Money",
+              "Pay with MTN MoMo, Vodafone, or AirtelTigo",
+              false,
+              paymentMethod === "momo",
+            )}
           >
-            <View className={`h-10 w-10 rounded-full items-center justify-center ${paymentMethod === "momo" ? "bg-primary-500" : "bg-slate-100 dark:bg-dark-bg"}`}>
-              <Ionicons name="phone-portrait-outline" size={20} color={paymentMethod === "momo" ? "#FFFFFF" : isDark ? "#F5F5F7" : "#0F172A"} />
+            <View
+              className={`h-10 w-10 items-center justify-center rounded-full ${paymentMethod === "momo" ? "bg-primary-500" : "bg-slate-100 dark:bg-dark-bg"}`}
+            >
+              <Ionicons
+                name="phone-portrait-outline"
+                size={20}
+                color={paymentMethod === "momo" ? "#FFFFFF" : isDark ? "#F5F5F7" : "#0F172A"}
+              />
             </View>
-            <Text className={`mt-2 text-xs font-JakartaSemiBold ${paymentMethod === "momo" ? "text-primary-700 dark:text-primary-300" : "text-slate-900 dark:text-dark-text"}`}>
+            <Text
+              className={`mt-2 font-JakartaSemiBold text-xs ${paymentMethod === "momo" ? "text-primary-700 dark:text-primary-300" : "text-slate-900 dark:text-dark-text"}`}
+            >
               MoMo
             </Text>
-            <Text className={`text-[10px] font-JakartaMedium mt-0.5 ${paymentMethod === "momo" ? "text-primary-600 dark:text-primary-400" : "text-slate-500 dark:text-dark-text-secondary"}`}>
+            <Text
+              className={`mt-0.5 font-JakartaMedium text-[10px] ${paymentMethod === "momo" ? "text-primary-600 dark:text-primary-400" : "text-slate-500 dark:text-dark-text-secondary"}`}
+            >
               Mobile
             </Text>
           </TouchableOpacity>
@@ -496,20 +555,35 @@ const Payment = () => {
           <TouchableOpacity
             onPress={() => setPaymentMethod("cash")}
             activeOpacity={0.7}
-            className={`flex-1 rounded-2xl border p-3 items-center ${
+            className={`flex-1 items-center rounded-2xl border p-3 ${
               paymentMethod === "cash"
-                ? "bg-primary-100 dark:bg-primary-900/30 border-primary-500"
-                : "bg-white dark:bg-dark-card border-slate-200 dark:border-dark-border"
+                ? "border-primary-500 bg-primary-100 dark:bg-primary-900/30"
+                : "border-slate-200 bg-white dark:border-dark-border dark:bg-dark-card"
             }`}
-            {...a11yButton("Cash", "Pay the driver directly with cash", false, paymentMethod === "cash")}
+            {...a11yButton(
+              "Cash",
+              "Pay the driver directly with cash",
+              false,
+              paymentMethod === "cash",
+            )}
           >
-            <View className={`h-10 w-10 rounded-full items-center justify-center ${paymentMethod === "cash" ? "bg-primary-500" : "bg-slate-100 dark:bg-dark-bg"}`}>
-              <Ionicons name="cash-outline" size={20} color={paymentMethod === "cash" ? "#FFFFFF" : isDark ? "#F5F5F7" : "#0F172A"} />
+            <View
+              className={`h-10 w-10 items-center justify-center rounded-full ${paymentMethod === "cash" ? "bg-primary-500" : "bg-slate-100 dark:bg-dark-bg"}`}
+            >
+              <Ionicons
+                name="cash-outline"
+                size={20}
+                color={paymentMethod === "cash" ? "#FFFFFF" : isDark ? "#F5F5F7" : "#0F172A"}
+              />
             </View>
-            <Text className={`mt-2 text-xs font-JakartaSemiBold ${paymentMethod === "cash" ? "text-primary-700 dark:text-primary-300" : "text-slate-900 dark:text-dark-text"}`}>
+            <Text
+              className={`mt-2 font-JakartaSemiBold text-xs ${paymentMethod === "cash" ? "text-primary-700 dark:text-primary-300" : "text-slate-900 dark:text-dark-text"}`}
+            >
               Cash
             </Text>
-            <Text className={`text-[10px] font-JakartaMedium mt-0.5 ${paymentMethod === "cash" ? "text-primary-600 dark:text-primary-400" : "text-slate-500 dark:text-dark-text-secondary"}`}>
+            <Text
+              className={`mt-0.5 font-JakartaMedium text-[10px] ${paymentMethod === "cash" ? "text-primary-600 dark:text-primary-400" : "text-slate-500 dark:text-dark-text-secondary"}`}
+            >
               Driver
             </Text>
           </TouchableOpacity>
@@ -517,27 +591,31 @@ const Payment = () => {
 
         {/* MoMo phone input */}
         {paymentMethod === "momo" && selectedRide && (
-          <View className="mt-4 rounded-2xl bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4">
-            <Text className="text-sm font-JakartaBold text-slate-400 dark:text-dark-text-secondary uppercase tracking-wider mb-3">
+          <View className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 dark:border-dark-border dark:bg-dark-card">
+            <Text className="mb-3 font-JakartaBold text-sm uppercase tracking-wider text-slate-400 dark:text-dark-text-secondary">
               Mobile Money
             </Text>
 
             {/* Provider selector */}
-            <View className="flex-row gap-2 mb-3">
+            <View className="mb-3 flex-row gap-2">
               {(["mtn", "vodafone", "airteltigo"] as MoMoProvider[]).map((p) => (
                 <TouchableOpacity
                   key={p}
                   onPress={() => setMomoProvider(p)}
                   activeOpacity={0.7}
-                  className={`flex-1 rounded-xl border py-2 px-3 items-center ${
+                  className={`flex-1 items-center rounded-xl border px-3 py-2 ${
                     momoProvider === p
-                      ? "bg-primary-100 dark:bg-primary-900/30 border-primary-500"
-                      : "bg-slate-50 dark:bg-dark-bg border-slate-200 dark:border-dark-border"
+                      ? "border-primary-500 bg-primary-100 dark:bg-primary-900/30"
+                      : "border-slate-200 bg-slate-50 dark:border-dark-border dark:bg-dark-bg"
                   }`}
                 >
-                  <Text className={`text-xs font-JakartaSemiBold capitalize ${
-                    momoProvider === p ? "text-primary-700 dark:text-primary-300" : "text-slate-600 dark:text-dark-text-secondary"
-                  }`}>
+                  <Text
+                    className={`font-JakartaSemiBold text-xs capitalize ${
+                      momoProvider === p
+                        ? "text-primary-700 dark:text-primary-300"
+                        : "text-slate-600 dark:text-dark-text-secondary"
+                    }`}
+                  >
                     {p === "airteltigo" ? "AT" : p}
                   </Text>
                 </TouchableOpacity>
@@ -545,12 +623,12 @@ const Payment = () => {
             </View>
 
             {/* Phone input */}
-            <View className="flex-row items-center bg-slate-50 dark:bg-dark-bg rounded-xl border border-slate-200 dark:border-dark-border px-3">
-              <Text className="text-sm font-JakartaMedium text-slate-500 dark:text-dark-text-secondary mr-2">
+            <View className="flex-row items-center rounded-xl border border-slate-200 bg-slate-50 px-3 dark:border-dark-border dark:bg-dark-bg">
+              <Text className="mr-2 font-JakartaMedium text-sm text-slate-500 dark:text-dark-text-secondary">
                 +233
               </Text>
               <TextInput
-                className="flex-1 py-3 text-sm font-JakartaMedium text-slate-900 dark:text-dark-text"
+                className="flex-1 py-3 font-JakartaMedium text-sm text-slate-900 dark:text-dark-text"
                 placeholder="Mobile number"
                 placeholderTextColor={isDark ? "#6B7280" : "#9CA3AF"}
                 keyboardType="phone-pad"
@@ -559,7 +637,7 @@ const Payment = () => {
                 maxLength={10}
               />
             </View>
-            <Text className="text-xs text-slate-400 dark:text-dark-text-tertiary mt-2">
+            <Text className="mt-2 text-xs text-slate-400 dark:text-dark-text-tertiary">
               You'll receive a prompt on your phone to confirm
             </Text>
           </View>
@@ -567,59 +645,71 @@ const Payment = () => {
 
         {/* Pay button */}
         {selectedRide && (
-          <View className="mt-6 mb-8">
+          <View className="mb-8 mt-6">
             {paymentMethod === "paystack" ? (
               <>
                 <CustomButton
-                  title={processing ? "Processing..." : paymentFailed ? `Retry Pay ${CURRENCY_SYMBOL}${selectedRide.fare_price}` : `Pay ${CURRENCY_SYMBOL}${selectedRide.fare_price} with Paystack`}
+                  title={
+                    processing
+                      ? "Processing..."
+                      : paymentFailed
+                        ? `Retry Pay ${CURRENCY_SYMBOL}${selectedRide.fare_price}`
+                        : `Pay ${CURRENCY_SYMBOL}${selectedRide.fare_price} with Paystack`
+                  }
                   onPress={handlePayWithPaystack}
                   disabled={processing}
                 />
-                {processing && (
-                  <ActivityIndicator size="small" color="#0286FF" className="mt-2" />
-                )}
+                {processing && <ActivityIndicator size="small" color="#0286FF" className="mt-2" />}
                 {paymentFailed && (
                   <TouchableOpacity onPress={handleCancelRide} className="mt-3 items-center">
-                    <Text className="text-sm font-JakartaMedium text-slate-500 dark:text-dark-text-secondary">
+                    <Text className="font-JakartaMedium text-sm text-slate-500 dark:text-dark-text-secondary">
                       Cancel this ride instead
                     </Text>
                   </TouchableOpacity>
                 )}
-                <Text className="text-xs text-slate-400 dark:text-dark-text-tertiary text-center mt-2">
+                <Text className="mt-2 text-center text-xs text-slate-400 dark:text-dark-text-tertiary">
                   Secure payments powered by Paystack
                 </Text>
               </>
             ) : paymentMethod === "momo" ? (
               <>
                 <CustomButton
-                  title={processing ? "Processing..." : paymentFailed ? `Retry Pay ${CURRENCY_SYMBOL}${selectedRide.fare_price}` : `Pay ${CURRENCY_SYMBOL}${selectedRide.fare_price} with MoMo`}
+                  title={
+                    processing
+                      ? "Processing..."
+                      : paymentFailed
+                        ? `Retry Pay ${CURRENCY_SYMBOL}${selectedRide.fare_price}`
+                        : `Pay ${CURRENCY_SYMBOL}${selectedRide.fare_price} with MoMo`
+                  }
                   onPress={handlePayWithMomo}
                   disabled={processing || !momoPhone || momoPhone.length < 10}
                 />
-                {processing && (
-                  <ActivityIndicator size="small" color="#0286FF" className="mt-2" />
-                )}
+                {processing && <ActivityIndicator size="small" color="#0286FF" className="mt-2" />}
                 {paymentFailed && (
                   <TouchableOpacity onPress={handleCancelRide} className="mt-3 items-center">
-                    <Text className="text-sm font-JakartaMedium text-slate-500 dark:text-dark-text-secondary">
+                    <Text className="font-JakartaMedium text-sm text-slate-500 dark:text-dark-text-secondary">
                       Cancel this ride instead
                     </Text>
                   </TouchableOpacity>
                 )}
-                <Text className="text-xs text-slate-400 dark:text-dark-text-tertiary text-center mt-2">
+                <Text className="mt-2 text-center text-xs text-slate-400 dark:text-dark-text-tertiary">
                   MTN, Vodafone & AirtelTigo supported
                 </Text>
               </>
             ) : (
               <>
                 <CustomButton
-                  title={processing ? "Confirming..." : `Pay ${CURRENCY_SYMBOL}${selectedRide.fare_price} with Cash`}
+                  title={
+                    processing
+                      ? "Confirming..."
+                      : `Pay ${CURRENCY_SYMBOL}${selectedRide.fare_price} with Cash`
+                  }
                   onPress={handlePayWithCash}
                   disabled={processing}
                   bgVariant="outline"
                   textVariant="primary"
                 />
-                <Text className="text-xs text-slate-400 dark:text-dark-text-tertiary text-center mt-2">
+                <Text className="mt-2 text-center text-xs text-slate-400 dark:text-dark-text-tertiary">
                   Pay the driver directly after the trip
                 </Text>
               </>

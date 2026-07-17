@@ -3,8 +3,30 @@ import { MarkerData } from "@/types/type";
 
 describe("generateMarkersFromData", () => {
   const drivers = [
-    { id: 1, first_name: "Kwame", last_name: "Asante", rating: 4.8, car_seats: 4, profile_image_url: "", car_image_url: "", latitude: 5.6, longitude: -0.19, title: "Kwame Asante" },
-    { id: 2, first_name: "Ama", last_name: "Boateng", rating: 4.6, car_seats: 5, profile_image_url: "", car_image_url: "", latitude: 5.6, longitude: -0.19, title: "Ama Boateng" },
+    {
+      id: 1,
+      first_name: "Kwame",
+      last_name: "Asante",
+      rating: 4.8,
+      car_seats: 4,
+      profile_image_url: "",
+      car_image_url: "",
+      latitude: 5.6,
+      longitude: -0.19,
+      title: "Kwame Asante",
+    },
+    {
+      id: 2,
+      first_name: "Ama",
+      last_name: "Boateng",
+      rating: 4.6,
+      car_seats: 5,
+      profile_image_url: "",
+      car_image_url: "",
+      latitude: 5.6,
+      longitude: -0.19,
+      title: "Ama Boateng",
+    },
   ];
 
   it("generates markers for each driver", () => {
@@ -67,7 +89,7 @@ describe("calculateRegion", () => {
 
     expect(result).toEqual({
       latitude: 5.6037,
-      longitude: -0.1870,
+      longitude: -0.187,
       zoomLevel: 12,
     });
   });

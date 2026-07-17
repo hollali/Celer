@@ -1,6 +1,8 @@
 -- Celer Database Schema
 -- Run this in your Neon SQL editor (https://console.neon.tech)
 
+CREATE EXTENSION IF NOT EXISTS postgis;
+
 -- Users table (synced from Clerk on sign-up)
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,

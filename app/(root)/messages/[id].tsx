@@ -21,13 +21,7 @@ import { Conversation, Message } from "@/types/type";
 
 // ─── Message Bubble ───────────────────────────────────────────────────────────
 
-const MessageBubble = ({
-  item,
-  isOwn,
-}: {
-  item: Message;
-  isOwn: boolean;
-}) => {
+const MessageBubble = ({ item, isOwn }: { item: Message; isOwn: boolean }) => {
   const time = new Date(item.created_at).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
@@ -35,34 +29,28 @@ const MessageBubble = ({
 
   return (
     <View
-      className={`px-5 mb-2 ${isOwn ? "items-end" : "items-start"}`}
-      {...a11y(
-        `${isOwn ? "You" : item.sender_name} said: ${item.text}, ${time}`,
-        "",
-        "text"
-      )}
+      className={`mb-2 px-5 ${isOwn ? "items-end" : "items-start"}`}
+      {...a11y(`${isOwn ? "You" : item.sender_name} said: ${item.text}, ${time}`, "", "text")}
     >
       <View
         className={`max-w-[78%] rounded-2xl px-4 py-3 ${
-          isOwn
-            ? "bg-primary-500 rounded-br-md"
-            : "bg-general-500 dark:bg-dark-card rounded-bl-md"
+          isOwn ? "rounded-br-md bg-primary-500" : "rounded-bl-md bg-general-500 dark:bg-dark-card"
         }`}
       >
         <Text
           className={`text-[15px] leading-5 ${
             isOwn
-              ? "text-white font-JakartaMedium"
-              : "text-secondary-800 dark:text-dark-text font-JakartaMedium"
+              ? "font-JakartaMedium text-white"
+              : "font-JakartaMedium text-secondary-800 dark:text-dark-text"
           }`}
         >
           {item.text}
         </Text>
         <Text
-          className={`text-[10px] mt-1 ${
+          className={`mt-1 text-[10px] ${
             isOwn
-              ? "text-white/60 font-Jakarta"
-              : "text-secondary-500 dark:text-dark-text-secondary font-Jakarta"
+              ? "font-Jakarta text-white/60"
+              : "font-Jakarta text-secondary-500 dark:text-dark-text-secondary"
           }`}
         >
           {time}
@@ -75,12 +63,12 @@ const MessageBubble = ({
 // ─── Date Separator ───────────────────────────────────────────────────────────
 
 const DateSeparator = ({ label }: { label: string }) => (
-  <View className="flex-row items-center justify-center my-3 px-5">
-    <View className="flex-1 h-px bg-general-300 dark:bg-dark-border" />
-    <Text className="mx-3 text-[11px] font-JakartaSemiBold text-secondary-500 dark:text-dark-text-secondary">
+  <View className="my-3 flex-row items-center justify-center px-5">
+    <View className="h-px flex-1 bg-general-300 dark:bg-dark-border" />
+    <Text className="mx-3 font-JakartaSemiBold text-[11px] text-secondary-500 dark:text-dark-text-secondary">
       {label}
     </Text>
-    <View className="flex-1 h-px bg-general-300 dark:bg-dark-border" />
+    <View className="h-px flex-1 bg-general-300 dark:bg-dark-border" />
   </View>
 );
 
@@ -89,30 +77,33 @@ const DateSeparator = ({ label }: { label: string }) => (
 const LoadingState = () => (
   <View className="flex-1 items-center justify-center" accessibilityLabel="Loading messages">
     <ActivityIndicator size="large" color={colors.primary[500]} />
-    <Text className="mt-3 text-sm font-JakartaMedium text-secondary-500 dark:text-dark-text-secondary">
+    <Text className="mt-3 font-JakartaMedium text-sm text-secondary-500 dark:text-dark-text-secondary">
       Loading conversation...
     </Text>
   </View>
 );
 
 const ErrorState = ({ message, onRetry }: { message: string; onRetry: () => void }) => (
-  <View className="flex-1 items-center justify-center px-10" accessibilityLabel={`Error: ${message}`}>
-    <View className="h-16 w-16 rounded-full bg-danger-100 dark:bg-danger-900/30 items-center justify-center">
+  <View
+    className="flex-1 items-center justify-center px-10"
+    accessibilityLabel={`Error: ${message}`}
+  >
+    <View className="h-16 w-16 items-center justify-center rounded-full bg-danger-100 dark:bg-danger-900/30">
       <Ionicons name="alert-circle-outline" size={28} color={colors.danger[500]} />
     </View>
-    <Text className="mt-4 text-[16px] font-JakartaSemiBold text-secondary-800 dark:text-dark-text text-center">
+    <Text className="mt-4 text-center font-JakartaSemiBold text-[16px] text-secondary-800 dark:text-dark-text">
       Something went wrong
     </Text>
-    <Text className="mt-1.5 text-[13px] font-Jakarta text-secondary-500 dark:text-dark-text-secondary text-center leading-5">
+    <Text className="mt-1.5 text-center font-Jakarta text-[13px] leading-5 text-secondary-500 dark:text-dark-text-secondary">
       {message}
     </Text>
     <TouchableOpacity
       onPress={onRetry}
       activeOpacity={0.7}
-      className="mt-5 px-6 py-2.5 rounded-full bg-primary-500"
+      className="mt-5 rounded-full bg-primary-500 px-6 py-2.5"
       {...a11yButton("Retry", "Try loading the conversation again")}
     >
-      <Text className="text-white font-JakartaSemiBold text-[14px]">Retry</Text>
+      <Text className="font-JakartaSemiBold text-[14px] text-white">Retry</Text>
     </TouchableOpacity>
   </View>
 );
@@ -137,10 +128,11 @@ const MessageThread = () => {
     refetch: refetchMessages,
   } = useFetch<Message[]>(`/(api)/messages?conversation_id=${conversationId}`, getToken, isLoaded);
 
-  const {
-    data: conversations,
-    loading: convLoading,
-  } = useFetch<Conversation[]>("/(api)/chat", getToken, isLoaded);
+  const { data: conversations, loading: convLoading } = useFetch<Conversation[]>(
+    "/(api)/chat",
+    getToken,
+    isLoaded,
+  );
 
   const conversation = conversations?.find((c) => c.id === conversationId);
 
@@ -172,7 +164,7 @@ const MessageThread = () => {
             text,
           }),
         },
-        token
+        token,
       );
       await refetchMessages();
     } catch (err) {
@@ -185,8 +177,7 @@ const MessageThread = () => {
 
   // ─── Build flat list with date separators ─────────────────────────────────
   type FlatItem =
-    | { kind: "date"; label: string; key: string }
-    | { kind: "message"; data: Message; key: string };
+    { kind: "date"; label: string; key: string } | { kind: "message"; data: Message; key: string };
 
   const flatData = React.useMemo<FlatItem[]>(() => {
     if (!messages) return [];
@@ -215,36 +206,32 @@ const MessageThread = () => {
     return items;
   }, [messages]);
 
-  const renderItem = useCallback(
-    ({ item }: { item: FlatItem }) => {
-      if (item.kind === "date") {
-        return <DateSeparator label={item.label} />;
-      }
-      return (
-        <MessageBubble
-          item={item.data}
-          isOwn={item.data.sender_type === "user"}
-        />
-      );
-    },
-    []
-  );
+  const renderItem = useCallback(({ item }: { item: FlatItem }) => {
+    if (item.kind === "date") {
+      return <DateSeparator label={item.label} />;
+    }
+    return <MessageBubble item={item.data} isOwn={item.data.sender_type === "user"} />;
+  }, []);
 
   const keyExtractor = useCallback((item: FlatItem) => item.key, []);
 
   // ─── Header ───────────────────────────────────────────────────────────────
   const renderHeader = () => (
-    <View className="flex-row items-center px-3 py-3 border-b border-general-300 dark:border-dark-border bg-white dark:bg-dark-bg">
+    <View className="flex-row items-center border-b border-general-300 bg-white px-3 py-3 dark:border-dark-border dark:bg-dark-bg">
       <TouchableOpacity
         onPress={() => router.back()}
         activeOpacity={0.6}
-        className="h-10 w-10 rounded-full items-center justify-center"
+        className="h-10 w-10 items-center justify-center rounded-full"
         {...a11yButton("Go back", "Return to messages list")}
       >
-        <Ionicons name="chevron-back" size={22} color={isDark ? colors.dark.text : colors.secondary[800]} />
+        <Ionicons
+          name="chevron-back"
+          size={22}
+          color={isDark ? colors.dark.text : colors.secondary[800]}
+        />
       </TouchableOpacity>
 
-      <View className="flex-1 flex-row items-center ml-1.5">
+      <View className="ml-1.5 flex-1 flex-row items-center">
         {conversation ? (
           <>
             <View
@@ -257,23 +244,23 @@ const MessageThread = () => {
                 justifyContent: "center",
               }}
             >
-              <Text className="text-white font-JakartaBold text-[13px]">
+              <Text className="font-JakartaBold text-[13px] text-white">
                 {conversation.avatar_initials}
               </Text>
             </View>
             <View className="ml-2.5 flex-1">
               <Text
-                className="text-[15px] font-JakartaSemiBold text-secondary-900 dark:text-dark-text"
+                className="font-JakartaSemiBold text-[15px] text-secondary-900 dark:text-dark-text"
                 numberOfLines={1}
                 {...a11y(conversation.name, "", "header")}
               >
                 {conversation.name}
               </Text>
-              <View className="flex-row items-center gap-1 mt-0.5">
+              <View className="mt-0.5 flex-row items-center gap-1">
                 {conversation.online && (
                   <View className="h-1.5 w-1.5 rounded-full bg-success-500" />
                 )}
-                <Text className="text-[11px] font-Jakarta text-secondary-500 dark:text-dark-text-secondary">
+                <Text className="font-Jakarta text-[11px] text-secondary-500 dark:text-dark-text-secondary">
                   {conversation.online ? "Online" : conversation.role}
                 </Text>
               </View>
@@ -286,7 +273,7 @@ const MessageThread = () => {
 
       <TouchableOpacity
         activeOpacity={0.6}
-        className="h-10 w-10 rounded-full items-center justify-center"
+        className="h-10 w-10 items-center justify-center rounded-full"
         {...a11yButton("More options", "Conversation options menu")}
       >
         <Ionicons
@@ -300,24 +287,24 @@ const MessageThread = () => {
 
   // ─── Compose Bar ──────────────────────────────────────────────────────────
   const renderComposeBar = () => (
-    <View className="px-4 py-3 border-t border-general-300 dark:border-dark-border bg-white dark:bg-dark-bg">
+    <View className="border-t border-general-300 bg-white px-4 py-3 dark:border-dark-border dark:bg-dark-bg">
       <View className="flex-row items-end gap-2">
         <TouchableOpacity
           activeOpacity={0.6}
-          className="h-10 w-10 rounded-full bg-general-500 dark:bg-dark-card items-center justify-center mb-0.5"
+          className="mb-0.5 h-10 w-10 items-center justify-center rounded-full bg-general-500 dark:bg-dark-card"
           {...a11yButton("Attach file", "Attach a file to your message")}
         >
           <Ionicons name="add-circle-outline" size={22} color={colors.primary[500]} />
         </TouchableOpacity>
 
-        <View className="flex-1 flex-row items-end bg-general-500 dark:bg-dark-card rounded-2xl px-4 py-2 min-h-[42px]">
+        <View className="min-h-[42px] flex-1 flex-row items-end rounded-2xl bg-general-500 px-4 py-2 dark:bg-dark-card">
           <TextInput
             ref={inputRef}
             value={inputText}
             onChangeText={setInputText}
             placeholder="Type a message..."
             placeholderTextColor={colors.general[800]}
-            className="flex-1 text-[15px] font-JakartaMedium text-secondary-800 dark:text-dark-text"
+            className="flex-1 font-JakartaMedium text-[15px] text-secondary-800 dark:text-dark-text"
             multiline
             maxLength={2000}
             accessibilityLabel="Message input"
@@ -329,14 +316,12 @@ const MessageThread = () => {
           onPress={handleSend}
           activeOpacity={0.6}
           disabled={!inputText.trim() || sending}
-          className={`h-10 w-10 rounded-full items-center justify-center mb-0.5 ${
-            inputText.trim() && !sending
-              ? "bg-primary-500"
-              : "bg-general-300 dark:bg-dark-border"
+          className={`mb-0.5 h-10 w-10 items-center justify-center rounded-full ${
+            inputText.trim() && !sending ? "bg-primary-500" : "bg-general-300 dark:bg-dark-border"
           }`}
           {...a11yButton(
             "Send message",
-            inputText.trim() ? "Send your message" : "Type a message first"
+            inputText.trim() ? "Send your message" : "Type a message first",
           )}
         >
           {sending ? (
@@ -384,19 +369,20 @@ const MessageThread = () => {
             renderItem={renderItem}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={
-              flatData.length === 0
-                ? { flex: 1 }
-                : { paddingTop: 12, paddingBottom: 8 }
+              flatData.length === 0 ? { flex: 1 } : { paddingTop: 12, paddingBottom: 8 }
             }
             ListEmptyComponent={
-              <View className="flex-1 items-center justify-center py-24" accessibilityLabel="No messages yet">
-                <View className="h-16 w-16 rounded-full bg-general-300 dark:bg-dark-card items-center justify-center">
+              <View
+                className="flex-1 items-center justify-center py-24"
+                accessibilityLabel="No messages yet"
+              >
+                <View className="h-16 w-16 items-center justify-center rounded-full bg-general-300 dark:bg-dark-card">
                   <Ionicons name="chatbubble-outline" size={28} color={colors.general[800]} />
                 </View>
-                <Text className="mt-4 text-[15px] font-JakartaSemiBold text-secondary-800 dark:text-dark-text">
+                <Text className="mt-4 font-JakartaSemiBold text-[15px] text-secondary-800 dark:text-dark-text">
                   No messages yet
                 </Text>
-                <Text className="mt-1.5 text-[13px] font-Jakarta text-secondary-500 dark:text-dark-text-secondary text-center px-10 leading-5">
+                <Text className="mt-1.5 px-10 text-center font-Jakarta text-[13px] leading-5 text-secondary-500 dark:text-dark-text-secondary">
                   Send a message to start the conversation.
                 </Text>
               </View>

@@ -31,7 +31,8 @@ export async function GET(request: Request) {
     `;
 
     return Response.json({ data: promos }, { status: 200 });
-  } catch {
+  } catch (err) {
+    console.error("GET /promotions error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -79,20 +80,25 @@ export async function POST(request: Request) {
       `;
       if (ride.length > 0) {
         const fare = Number(ride[0].fare_price);
-        discount = promo[0].discount_type === "percent"
-          ? Math.round(fare * (promo[0].discount_value / 100) * 100) / 100
-          : Math.min(promo[0].discount_value, fare);
+        discount =
+          promo[0].discount_type === "percent"
+            ? Math.round(fare * (promo[0].discount_value / 100) * 100) / 100
+            : Math.min(promo[0].discount_value, fare);
       }
     }
 
-    return Response.json({
-      data: {
-        ...promo[0],
-        discount,
-        final_fare: discount > 0 ? undefined : undefined,
+    return Response.json(
+      {
+        data: {
+          ...promo[0],
+          discount,
+          final_fare: discount > 0 ? undefined : undefined,
+        },
       },
-    }, { status: 200 });
-  } catch {
+      { status: 200 },
+    );
+  } catch (err) {
+    console.error("POST /promotions error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

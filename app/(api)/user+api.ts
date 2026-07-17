@@ -21,7 +21,8 @@ export async function GET(request: Request) {
     }
 
     return Response.json({ data: result[0] }, { status: 200 });
-  } catch {
+  } catch (err) {
+    console.error("GET /user error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -58,7 +59,8 @@ export async function POST(request: Request) {
     `;
 
     return Response.json({ data: result[0] }, { status: 201 });
-  } catch {
+  } catch (err) {
+    console.error("POST /user error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -69,13 +71,16 @@ export async function PATCH(request: Request) {
     if (!user?.dbUserId) return unauthorizedResponse();
 
     const body = await request.json();
-    const {
-      name, email, phone, bio, preferred_vehicle,
-      marketing_opt_in, ride_updates,
-    } = body;
+    const { name, email, phone, bio, preferred_vehicle, marketing_opt_in, ride_updates } = body;
 
-    const hasFields = name || email || phone != null || bio != null ||
-      preferred_vehicle || marketing_opt_in != null || ride_updates != null;
+    const hasFields =
+      name ||
+      email ||
+      phone != null ||
+      bio != null ||
+      preferred_vehicle ||
+      marketing_opt_in != null ||
+      ride_updates != null;
 
     if (!hasFields) {
       return Response.json({ error: "No fields to update" }, { status: 400 });
@@ -83,9 +88,12 @@ export async function PATCH(request: Request) {
 
     const trimmedName = name ? String(name).trim().slice(0, MAX_NAME_LENGTH) : undefined;
     const trimmedEmail = email ? String(email).trim().slice(0, MAX_EMAIL_LENGTH) : undefined;
-    const trimmedPhone = phone != null ? String(phone).trim().slice(0, MAX_PHONE_LENGTH) : undefined;
+    const trimmedPhone =
+      phone != null ? String(phone).trim().slice(0, MAX_PHONE_LENGTH) : undefined;
     const trimmedBio = bio != null ? String(bio).trim().slice(0, MAX_BIO_LENGTH) : undefined;
-    const trimmedVehicle = preferred_vehicle ? String(preferred_vehicle).trim().slice(0, 50) : undefined;
+    const trimmedVehicle = preferred_vehicle
+      ? String(preferred_vehicle).trim().slice(0, 50)
+      : undefined;
 
     if (trimmedEmail && !EMAIL_REGEX.test(trimmedEmail)) {
       return Response.json({ error: "Invalid email format" }, { status: 400 });
@@ -118,7 +126,8 @@ export async function PATCH(request: Request) {
     }
 
     return Response.json({ data: result[0] }, { status: 200 });
-  } catch {
+  } catch (err) {
+    console.error("PATCH /user error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -131,7 +140,8 @@ export async function DELETE(request: Request) {
     await sql`DELETE FROM users WHERE id = ${user.dbUserId}`;
 
     return Response.json({ data: { deleted: true } }, { status: 200 });
-  } catch {
+  } catch (err) {
+    console.error("DELETE /user error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

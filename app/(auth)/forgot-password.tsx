@@ -33,23 +33,23 @@ const ForgotPassword = () => {
   return (
     <ScrollView className="flex-1 bg-white dark:bg-dark-bg">
       <View className="flex-1 bg-white dark:bg-dark-bg">
-        <View className="relative w-full h-[250px]">
+        <View className="relative h-[250px] w-full">
           <Image
             source={images.signUpCar}
-            className="z-0 w-full h-[250px]"
+            className="z-0 h-[250px] w-full"
             {...a11yImage("Reset password illustration")}
           />
-          <Text className="text-2xl text-black dark:text-dark-text font-JakartaSemiBold absolute bottom-5 left-5">
+          <Text className="absolute bottom-5 left-5 font-JakartaSemiBold text-2xl text-black dark:text-dark-text">
             Reset Password
           </Text>
         </View>
         <View className="p-5">
           {sent ? (
-            <View className="items-center mt-6">
-              <Text className="text-lg text-center text-black dark:text-dark-text font-JakartaMedium">
+            <View className="mt-6 items-center">
+              <Text className="text-center font-JakartaMedium text-lg text-black dark:text-dark-text">
                 Check your email
               </Text>
-              <Text className="text-sm text-center text-general-200 dark:text-dark-text-secondary mt-2">
+              <Text className="mt-2 text-center text-sm text-general-200 dark:text-dark-text-secondary">
                 We sent a password reset link to {email}
               </Text>
               <CustomButton
@@ -60,7 +60,7 @@ const ForgotPassword = () => {
             </View>
           ) : (
             <>
-              <Text className="text-base text-general-200 dark:text-dark-text-secondary mb-4">
+              <Text className="mb-4 text-base text-general-200 dark:text-dark-text-secondary">
                 Enter your email and we&apos;ll send you a link to reset your password.
               </Text>
               <InputField
@@ -72,16 +72,12 @@ const ForgotPassword = () => {
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
-              <CustomButton
-                title="Send Reset Link"
-                onPress={onResetPress}
-                className="mt-6"
-              />
+              <CustomButton title="Send Reset Link" onPress={onResetPress} className="mt-6" />
             </>
           )}
           <Link
             href="/(auth)/sign-in"
-            className="text-lg text-center text-general-200 dark:text-dark-text-secondary mt-10"
+            className="mt-10 text-center text-lg text-general-200 dark:text-dark-text-secondary"
             {...a11yLink("Back to sign in", "Navigate to sign in page")}
           >
             <Text className="dark:text-dark-text-secondary">Back to </Text>

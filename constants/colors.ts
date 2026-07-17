@@ -104,15 +104,17 @@ export const colors = {
   },
   whiteMuted: "rgba(255, 255, 255, 0.7)",
   iosAccent: isIOS ? "#007AFF" : "#0286FF",
-  iosVibrant: isIOS ? {
-    blue: "#007AFF",
-    green: "#34C759",
-    indigo: "#5856D6",
-    orange: "#FF9500",
-    pink: "#FF2D55",
-    purple: "#AF52DE",
-    red: "#FF3B30",
-    teal: "#5AC8FA",
-    yellow: "#FFCC00",
-  } : undefined,
+  iosVibrant: isIOS
+    ? {
+        blue: "#007AFF",
+        green: "#34C759",
+        indigo: "#5856D6",
+        orange: "#FF9500",
+        pink: "#FF2D55",
+        purple: "#AF52DE",
+        red: "#FF3B30",
+        teal: "#5AC8FA",
+        yellow: "#FFCC00",
+      }
+    : undefined,
 } as const;

@@ -13,23 +13,25 @@ const DriverPending = () => {
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-dark-bg">
       <View className="flex-1 items-center justify-center px-8">
-        <View className="w-24 h-24 rounded-full bg-amber-100 dark:bg-amber-900/30 items-center justify-center mb-6">
+        <View className="mb-6 h-24 w-24 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
           <Ionicons name="hourglass-outline" size={48} color="#F59E0B" />
         </View>
 
         <Text
-          className="text-2xl font-JakartaExtraBold text-slate-900 dark:text-dark-text text-center"
+          className="text-center font-JakartaExtraBold text-2xl text-slate-900 dark:text-dark-text"
           {...a11yHeader("Application Under Review")}
         >
           Application Under Review
         </Text>
 
         <Text
-          className="mt-3 text-base font-JakartaMedium text-slate-500 dark:text-dark-text-secondary text-center leading-6"
-          {...a11y("Your driver application has been submitted and is being reviewed. This usually takes 1-2 business days. We'll notify you once your application is approved.")}
+          className="mt-3 text-center font-JakartaMedium text-base leading-6 text-slate-500 dark:text-dark-text-secondary"
+          {...a11y(
+            "Your driver application has been submitted and is being reviewed. This usually takes 1-2 business days. We'll notify you once your application is approved.",
+          )}
         >
-          Your driver application has been submitted and is being reviewed.
-          This usually takes 1-2 business days.
+          Your driver application has been submitted and is being reviewed. This usually takes 1-2
+          business days.
           {"\n\n"}
           We'll notify you once your application is approved.
         </Text>
@@ -41,18 +43,16 @@ const DriverPending = () => {
             className="items-center rounded-full bg-primary-500 py-4"
             {...a11yButton("Back to Riding", "Return to the rider home screen")}
           >
-            <Text className="text-base font-JakartaBold text-white">
-              Back to Riding
-            </Text>
+            <Text className="font-JakartaBold text-base text-white">Back to Riding</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => router.back()}
             activeOpacity={0.8}
-            className="items-center rounded-full border border-slate-200 dark:border-dark-border py-4"
+            className="items-center rounded-full border border-slate-200 py-4 dark:border-dark-border"
             {...a11yButton("Go Back", "Return to previous screen")}
           >
-            <Text className="text-base font-JakartaBold text-slate-700 dark:text-dark-text">
+            <Text className="font-JakartaBold text-base text-slate-700 dark:text-dark-text">
               Go Back
             </Text>
           </TouchableOpacity>

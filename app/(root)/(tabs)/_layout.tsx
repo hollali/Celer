@@ -5,15 +5,9 @@ import { Image, ImageSourcePropType, Platform, View } from "react-native";
 import { useTheme } from "@/lib/ThemeContext";
 import { useTabStore } from "@/store";
 
-const TabIcon = ({
-  source,
-  focused,
-}: {
-  source: ImageSourcePropType;
-  focused: boolean;
-}) => (
+const TabIcon = ({ source, focused }: { source: ImageSourcePropType; focused: boolean }) => (
   <View
-    className={`rounded-full w-12 h-12 items-center justify-center ${
+    className={`h-12 w-12 items-center justify-center rounded-full ${
       focused ? "bg-general-400" : ""
     }`}
   >
@@ -21,7 +15,7 @@ const TabIcon = ({
       source={source}
       tintColor={focused ? "#ffffff" : "#9ca3af"}
       resizeMode="contain"
-      className="w-7 h-7"
+      className="h-7 w-7"
     />
   </View>
 );
@@ -75,9 +69,7 @@ export default function Layout() {
         options={{
           title: "Home",
           headerShown: false,
-          tabBarIcon: ({ focused }) => (
-            <TabIcon source={icons.home} focused={focused} />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon source={icons.home} focused={focused} />,
           tabBarAccessibilityLabel: "Home tab — shows your location and nearby drivers",
         }}
       />
@@ -86,9 +78,7 @@ export default function Layout() {
         options={{
           title: "Rides",
           headerShown: false,
-          tabBarIcon: ({ focused }) => (
-            <TabIcon source={icons.list} focused={focused} />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon source={icons.list} focused={focused} />,
           tabBarAccessibilityLabel: "Rides tab — view your ride history and payments",
         }}
       />
@@ -97,9 +87,7 @@ export default function Layout() {
         options={{
           title: "Chat",
           headerShown: false,
-          tabBarIcon: ({ focused }) => (
-            <TabIcon source={icons.chat} focused={focused} />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon source={icons.chat} focused={focused} />,
           tabBarAccessibilityLabel: "Chat tab — messages with drivers and support",
         }}
       />
@@ -108,9 +96,7 @@ export default function Layout() {
         options={{
           title: "Profile",
           headerShown: false,
-          tabBarIcon: ({ focused }) => (
-            <TabIcon source={icons.profile} focused={focused} />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon source={icons.profile} focused={focused} />,
           tabBarAccessibilityLabel: "Profile tab — account settings and preferences",
         }}
       />

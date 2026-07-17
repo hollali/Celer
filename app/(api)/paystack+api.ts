@@ -61,7 +61,7 @@ export async function POST(request: Request) {
       if (!data.status) {
         return Response.json(
           { error: data.message || "Paystack initialization failed" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -70,15 +70,19 @@ export async function POST(request: Request) {
           INSERT INTO paystack_transactions (reference, ride_id, user_id, amount, status)
           VALUES (${data.data.reference}, ${rideId}, ${user.dbUserId}, ${Math.round(dbAmount * 100)}, 'pending')
         `;
-      } catch {
+      } catch (err) {
+        console.error("POST /paystack initialize insert error:", err);
         // Reference may already exist (idempotent)
       }
 
-      return Response.json({
-        authorization_url: data.data.authorization_url,
-        reference: data.data.reference,
-        access_code: data.data.access_code,
-      }, { status: 200 });
+      return Response.json(
+        {
+          authorization_url: data.data.authorization_url,
+          reference: data.data.reference,
+          access_code: data.data.access_code,
+        },
+        { status: 200 },
+      );
     }
 
     if (action === "verify") {
@@ -92,7 +96,10 @@ export async function POST(request: Request) {
         LIMIT 1
       `;
       if (existingTx.length > 0) {
-        return Response.json({ verified: true, reference, already_verified: true }, { status: 200 });
+        return Response.json(
+          { verified: true, reference, already_verified: true },
+          { status: 200 },
+        );
       }
 
       const response = await fetch(`${PAYSTACK_API}/transaction/verify/${reference}`, {
@@ -134,12 +141,15 @@ export async function POST(request: Request) {
         WHERE reference = ${reference}
       `;
 
-      return Response.json({
-        verified: true,
-        amount: data.data.amount / 100,
-        reference: data.data.reference,
-        paid_at: data.data.paid_at,
-      }, { status: 200 });
+      return Response.json(
+        {
+          verified: true,
+          amount: data.data.amount / 100,
+          reference: data.data.reference,
+          paid_at: data.data.paid_at,
+        },
+        { status: 200 },
+      );
     }
 
     if (action === "initialize_momo") {
@@ -150,11 +160,17 @@ export async function POST(request: Request) {
       if (!user.dbUserId) {
         return Response.json({ error: "Unauthorized" }, { status: 401 });
       }
-      return initializeMomo(user as { dbUserId: number; clerkId: string; email: string }, rideId, phone, provider);
+      return initializeMomo(
+        user as { dbUserId: number; clerkId: string; email: string },
+        rideId,
+        phone,
+        provider,
+      );
     }
 
     return Response.json({ error: "Invalid action" }, { status: 400 });
-  } catch {
+  } catch (err) {
+    console.error("POST /paystack error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -163,7 +179,7 @@ async function initializeMomo(
   user: { dbUserId: number; clerkId: string; email: string },
   rideId: number,
   phone: string,
-  provider: string
+  provider: string,
 ) {
   if (!paystackSecretKey) {
     return Response.json({ error: "Payment not configured" }, { status: 503 });
@@ -175,7 +191,10 @@ async function initializeMomo(
 
   const validProviders = ["mtn", "vodafone", "airteltigo"];
   if (!validProviders.includes(provider.toLowerCase())) {
-    return Response.json({ error: "Invalid provider. Use mtn, vodafone, or airteltigo" }, { status: 400 });
+    return Response.json(
+      { error: "Invalid provider. Use mtn, vodafone, or airteltigo" },
+      { status: 400 },
+    );
   }
 
   const rides = await sql`
@@ -213,7 +232,7 @@ async function initializeMomo(
   if (!data.status) {
     return Response.json(
       { error: data.message || "Paystack MoMo initialization failed" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -222,15 +241,19 @@ async function initializeMomo(
       INSERT INTO paystack_transactions (reference, ride_id, user_id, amount, status)
       VALUES (${data.data.reference}, ${rideId}, ${user.dbUserId}, ${Math.round(dbAmount * 100)}, 'pending')
     `;
-  } catch {
+  } catch (err) {
+    console.error("POST /paystack initialize_momo insert error:", err);
     // Reference may already exist (idempotent)
   }
 
-  return Response.json({
-    authorization_url: data.data.authorization_url,
-    reference: data.data.reference,
-    access_code: data.data.access_code,
-  }, { status: 200 });
+  return Response.json(
+    {
+      authorization_url: data.data.authorization_url,
+      reference: data.data.reference,
+      access_code: data.data.access_code,
+    },
+    { status: 200 },
+  );
 }
 
 async function handleWebhook(request: Request) {
@@ -245,10 +268,7 @@ async function handleWebhook(request: Request) {
     return Response.json({ error: "Missing signature" }, { status: 400 });
   }
 
-  const hash = crypto
-    .createHmac("sha512", paystackSecretKey)
-    .update(body)
-    .digest("hex");
+  const hash = crypto.createHmac("sha512", paystackSecretKey).update(body).digest("hex");
 
   const sigBuf = Buffer.from(signature, "hex");
   const hashBuf = Buffer.from(hash, "hex");
@@ -278,7 +298,9 @@ async function handleWebhook(request: Request) {
     const expectedAmount = txRecord[0]?.amount;
 
     if (expectedAmount && event.data.amount !== expectedAmount) {
-      console.log(`Paystack webhook amount mismatch: expected ${expectedAmount}, got ${event.data.amount}`);
+      console.log(
+        `Paystack webhook amount mismatch: expected ${expectedAmount}, got ${event.data.amount}`,
+      );
       return Response.json({ error: "Amount mismatch" }, { status: 400 });
     }
 

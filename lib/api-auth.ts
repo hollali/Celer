@@ -1,6 +1,5 @@
 import { verifyToken } from "@clerk/backend";
-import sql from "@/lib/neon";
-import { withRetry } from "@/lib/neon";
+import sql, { withRetry } from "@/lib/neon";
 
 export interface AuthUser {
   clerkId: string;
@@ -41,24 +40,29 @@ export async function authenticateRequest(request: Request): Promise<AuthUser | 
   const clerkId = payload.sub;
   const email = (payload.email as string) || "";
 
-  const name = (payload.name as string)
-    || [payload.given_name, payload.family_name].filter(Boolean).join(" ")
-    || email.split("@")[0]
-    || "User";
+  const name =
+    (payload.name as string) ||
+    [payload.given_name, payload.family_name].filter(Boolean).join(" ") ||
+    email.split("@")[0] ||
+    "User";
 
   let dbUserId: number | null = null;
   try {
-    let userResult = await withRetry(() => sql`
+    let userResult = await withRetry(
+      () => sql`
       SELECT id FROM users WHERE clerk_id = ${clerkId} LIMIT 1;
-    `);
+    `,
+    );
 
     if (userResult.length === 0) {
-      userResult = await withRetry(() => sql`
+      userResult = await withRetry(
+        () => sql`
         INSERT INTO users (clerk_id, name, email)
         VALUES (${clerkId}, ${name}, ${email})
         ON CONFLICT (clerk_id) DO NOTHING
         RETURNING id
-      `);
+      `,
+      );
     }
 
     if (userResult.length > 0) {

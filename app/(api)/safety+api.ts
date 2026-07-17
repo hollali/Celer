@@ -20,7 +20,8 @@ export async function GET(request: Request) {
     `;
 
     return Response.json({ data: { settings: settings[0], contacts } }, { status: 200 });
-  } catch {
+  } catch (err) {
+    console.error("GET /safety error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -43,9 +44,11 @@ export async function PATCH(request: Request) {
         check_in_interval = COALESCE(${check_in_interval ?? null}, safety_settings.check_in_interval)
     `;
 
-    const result = await sql`SELECT * FROM safety_settings WHERE user_id = ${user.dbUserId} LIMIT 1`;
+    const result =
+      await sql`SELECT * FROM safety_settings WHERE user_id = ${user.dbUserId} LIMIT 1`;
     return Response.json({ data: result[0] }, { status: 200 });
-  } catch {
+  } catch (err) {
+    console.error("PATCH /safety error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -62,7 +65,8 @@ export async function POST(request: Request) {
       return Response.json({ error: "Missing name or phone" }, { status: 400 });
     }
 
-    const count = await sql`SELECT COUNT(*)::int as cnt FROM safety_contacts WHERE user_id = ${user.dbUserId}`;
+    const count =
+      await sql`SELECT COUNT(*)::int as cnt FROM safety_contacts WHERE user_id = ${user.dbUserId}`;
     if ((count[0]?.cnt ?? 0) >= 5) {
       return Response.json({ error: "Maximum 5 trusted contacts" }, { status: 400 });
     }
@@ -74,7 +78,8 @@ export async function POST(request: Request) {
     `;
 
     return Response.json({ data: result[0] }, { status: 201 });
-  } catch {
+  } catch (err) {
+    console.error("POST /safety error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -93,7 +98,8 @@ export async function DELETE(request: Request) {
 
     await sql`DELETE FROM safety_contacts WHERE id = ${parseInt(contactId)} AND user_id = ${user.dbUserId}`;
     return Response.json({ data: { deleted: true } }, { status: 200 });
-  } catch {
+  } catch (err) {
+    console.error("DELETE /safety error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

@@ -8,11 +8,7 @@ const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const UPLOAD_TIMEOUT_MS = 30_000;
 
 export type DocumentType =
-  | "profile_photo"
-  | "drivers_license"
-  | "vehicle_registration"
-  | "insurance"
-  | "vehicle_photo";
+  "profile_photo" | "drivers_license" | "vehicle_registration" | "insurance" | "vehicle_photo";
 
 export interface UploadResult {
   url: string;
@@ -42,7 +38,9 @@ const pickFromCamera = async (allowEditing = true): Promise<ImagePicker.ImagePic
 const validateAsset = (asset: ImagePicker.ImagePickerAsset) => {
   const mimeType = asset.mimeType ?? "image/jpeg";
   if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
-    throw new Error(`Unsupported file type "${mimeType}". Please choose a JPEG, PNG, or WebP image.`);
+    throw new Error(
+      `Unsupported file type "${mimeType}". Please choose a JPEG, PNG, or WebP image.`,
+    );
   }
 };
 
@@ -78,15 +76,18 @@ const uploadWithRetry = async (url: string, body: FormData): Promise<Response> =
 
 export const pickAndUploadImage = async (
   type: DocumentType,
-  source: "library" | "camera" = "library"
+  source: "library" | "camera" = "library",
 ): Promise<UploadResult | null> => {
   if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
-    throw new Error("Cloudinary not configured. Check EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME and EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET");
+    throw new Error(
+      "Cloudinary not configured. Check EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME and EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET",
+    );
   }
 
-  const result = source === "camera"
-    ? await pickFromCamera(type !== "vehicle_photo")
-    : await pickImage(type !== "vehicle_photo");
+  const result =
+    source === "camera"
+      ? await pickFromCamera(type !== "vehicle_photo")
+      : await pickImage(type !== "vehicle_photo");
 
   if (result.canceled || !result.assets?.[0]) {
     return null;

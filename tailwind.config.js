@@ -114,7 +114,7 @@ module.exports = {
         "glass-dark": "rgba(255, 255, 255, 0.12)",
       },
       boxShadow: {
-        "glass": "0 8px 32px rgba(0, 0, 0, 0.12)",
+        glass: "0 8px 32px rgba(0, 0, 0, 0.12)",
         "glass-dark": "0 8px 32px rgba(0, 0, 0, 0.4)",
       },
     },

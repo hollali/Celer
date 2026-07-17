@@ -37,33 +37,44 @@ const Legal = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-dark-bg">
-      <View className="flex-row items-center px-5 py-4 bg-white dark:bg-dark-card border-b border-slate-100 dark:border-dark-border">
+      <View className="flex-row items-center border-b border-slate-100 bg-white px-5 py-4 dark:border-dark-border dark:bg-dark-card">
         <TouchableOpacity onPress={() => router.back()} {...a11yButton("Go back")}>
           <Ionicons name="chevron-back" size={22} color={isDark ? "#F5F5F7" : "#0F172A"} />
         </TouchableOpacity>
-        <Text className="ml-4 text-lg font-JakartaBold text-slate-900 dark:text-dark-text" {...a11yHeader("Legal & Privacy")}>Legal & Privacy</Text>
+        <Text
+          className="ml-4 font-JakartaBold text-lg text-slate-900 dark:text-dark-text"
+          {...a11yHeader("Legal & Privacy")}
+        >
+          Legal & Privacy
+        </Text>
       </View>
 
       <ScrollView className="px-5" showsVerticalScrollIndicator={false}>
-        <View className="mt-5 rounded-2xl bg-white dark:bg-dark-card p-4 border border-slate-100 dark:border-dark-border">
-          <Text className="font-JakartaMedium text-slate-900 dark:text-dark-text">Legal Center</Text>
-          <Text className="text-slate-500 dark:text-dark-text-secondary text-xs mt-1">Last updated: March 10, 2026</Text>
-          <Text className="text-slate-600 dark:text-dark-text-secondary text-sm mt-3">
+        <View className="mt-5 rounded-2xl border border-slate-100 bg-white p-4 dark:border-dark-border dark:bg-dark-card">
+          <Text className="font-JakartaMedium text-slate-900 dark:text-dark-text">
+            Legal Center
+          </Text>
+          <Text className="mt-1 text-xs text-slate-500 dark:text-dark-text-secondary">
+            Last updated: March 10, 2026
+          </Text>
+          <Text className="mt-3 text-sm text-slate-600 dark:text-dark-text-secondary">
             Review your legal agreements and control data permissions in one place.
           </Text>
         </View>
 
-        <View className="mt-4 rounded-2xl bg-white dark:bg-dark-card border border-slate-100 dark:border-dark-border overflow-hidden">
+        <View className="mt-4 overflow-hidden rounded-2xl border border-slate-100 bg-white dark:border-dark-border dark:bg-dark-card">
           {legalDocs.map((doc, index) => {
             const isOpen = expanded === doc.id;
             return (
               <View key={doc.id}>
                 <TouchableOpacity
-                  className="px-4 py-4 flex-row items-center justify-between"
+                  className="flex-row items-center justify-between px-4 py-4"
                   onPress={() => setExpanded(isOpen ? null : doc.id)}
                   {...a11yButton(doc.title, isOpen ? "Collapse" : "Expand details")}
                 >
-                  <Text className="font-JakartaMedium text-slate-900 dark:text-dark-text">{doc.title}</Text>
+                  <Text className="font-JakartaMedium text-slate-900 dark:text-dark-text">
+                    {doc.title}
+                  </Text>
                   <Ionicons
                     name={isOpen ? "chevron-up" : "chevron-forward"}
                     size={18}
@@ -72,43 +83,80 @@ const Legal = () => {
                 </TouchableOpacity>
                 {isOpen && (
                   <View className="px-4 pb-4">
-                    <Text className="text-sm text-slate-600 dark:text-dark-text-secondary leading-5">{doc.summary}</Text>
-                    <TouchableOpacity className="mt-3 rounded-full bg-slate-900 dark:bg-primary-500 px-4 py-2 self-start" {...a11yButton(`Read full ${doc.title} document`)}>
-                      <Text className="text-white text-xs font-JakartaMedium">Read full document</Text>
+                    <Text className="text-sm leading-5 text-slate-600 dark:text-dark-text-secondary">
+                      {doc.summary}
+                    </Text>
+                    <TouchableOpacity
+                      className="mt-3 self-start rounded-full bg-slate-900 px-4 py-2 dark:bg-primary-500"
+                      {...a11yButton(`Read full ${doc.title} document`)}
+                    >
+                      <Text className="font-JakartaMedium text-xs text-white">
+                        Read full document
+                      </Text>
                     </TouchableOpacity>
                   </View>
                 )}
-                {index !== legalDocs.length - 1 && <View className="h-px bg-slate-100 dark:bg-dark-border" />}
+                {index !== legalDocs.length - 1 && (
+                  <View className="h-px bg-slate-100 dark:bg-dark-border" />
+                )}
               </View>
             );
           })}
         </View>
 
-        <View className="mt-4 rounded-2xl bg-white dark:bg-dark-card border border-slate-100 dark:border-dark-border overflow-hidden">
-          <View className="px-4 py-4 flex-row items-center justify-between">
-            <View className="pr-3 flex-1">
-              <Text className="font-JakartaMedium text-slate-900 dark:text-dark-text">Analytics consent</Text>
-              <Text className="text-xs text-slate-500 dark:text-dark-text-secondary">Help improve app performance and reliability.</Text>
+        <View className="mt-4 overflow-hidden rounded-2xl border border-slate-100 bg-white dark:border-dark-border dark:bg-dark-card">
+          <View className="flex-row items-center justify-between px-4 py-4">
+            <View className="flex-1 pr-3">
+              <Text className="font-JakartaMedium text-slate-900 dark:text-dark-text">
+                Analytics consent
+              </Text>
+              <Text className="text-xs text-slate-500 dark:text-dark-text-secondary">
+                Help improve app performance and reliability.
+              </Text>
             </View>
-            <Switch value={analyticsConsent} onValueChange={setAnalyticsConsent} {...a11ySwitch("Analytics consent", analyticsConsent)} />
+            <Switch
+              value={analyticsConsent}
+              onValueChange={setAnalyticsConsent}
+              {...a11ySwitch("Analytics consent", analyticsConsent)}
+            />
           </View>
           <View className="h-px bg-slate-100 dark:bg-dark-border" />
-          <View className="px-4 py-4 flex-row items-center justify-between">
-            <View className="pr-3 flex-1">
-              <Text className="font-JakartaMedium text-slate-900 dark:text-dark-text">Marketing consent</Text>
-              <Text className="text-xs text-slate-500 dark:text-dark-text-secondary">Receive personalized promotions and updates.</Text>
+          <View className="flex-row items-center justify-between px-4 py-4">
+            <View className="flex-1 pr-3">
+              <Text className="font-JakartaMedium text-slate-900 dark:text-dark-text">
+                Marketing consent
+              </Text>
+              <Text className="text-xs text-slate-500 dark:text-dark-text-secondary">
+                Receive personalized promotions and updates.
+              </Text>
             </View>
-            <Switch value={marketingConsent} onValueChange={setMarketingConsent} {...a11ySwitch("Marketing consent", marketingConsent)} />
+            <Switch
+              value={marketingConsent}
+              onValueChange={setMarketingConsent}
+              {...a11ySwitch("Marketing consent", marketingConsent)}
+            />
           </View>
         </View>
 
-        <View className="mt-4 mb-8 rounded-2xl bg-white dark:bg-dark-card border border-slate-100 dark:border-dark-border p-4">
-          <TouchableOpacity onPress={() => Alert.alert("Coming Soon", "Data download feature coming soon!")} className="rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-700/30 py-3 px-4 flex-row items-center justify-between" {...a11yButton("Download my data archive")}>
-            <Text className="font-JakartaMedium text-blue-700 dark:text-blue-400">Download my data archive</Text>
+        <View className="mb-8 mt-4 rounded-2xl border border-slate-100 bg-white p-4 dark:border-dark-border dark:bg-dark-card">
+          <TouchableOpacity
+            onPress={() => Alert.alert("Coming Soon", "Data download feature coming soon!")}
+            className="flex-row items-center justify-between rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 dark:border-blue-700/30 dark:bg-blue-900/20"
+            {...a11yButton("Download my data archive")}
+          >
+            <Text className="font-JakartaMedium text-blue-700 dark:text-blue-400">
+              Download my data archive
+            </Text>
             <Ionicons name="download-outline" size={18} color="#1d4ed8" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => Alert.alert("Coming Soon", "Account deletion feature coming soon!")} className="mt-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-700/30 py-3 px-4 flex-row items-center justify-between" {...a11yButton("Request account deletion")}>
-            <Text className="font-JakartaMedium text-red-700 dark:text-red-400">Request account deletion</Text>
+          <TouchableOpacity
+            onPress={() => Alert.alert("Coming Soon", "Account deletion feature coming soon!")}
+            className="mt-3 flex-row items-center justify-between rounded-xl border border-red-100 bg-red-50 px-4 py-3 dark:border-red-700/30 dark:bg-red-900/20"
+            {...a11yButton("Request account deletion")}
+          >
+            <Text className="font-JakartaMedium text-red-700 dark:text-red-400">
+              Request account deletion
+            </Text>
             <Ionicons name="trash-outline" size={18} color="#b91c1c" />
           </TouchableOpacity>
         </View>

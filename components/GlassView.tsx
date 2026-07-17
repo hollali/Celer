@@ -15,28 +15,21 @@ interface GlassViewProps {
   style?: Record<string, unknown>;
 }
 
-export function GlassView({
-  children,
-  className,
-  intensity = 70,
-  tint,
-  style,
-}: GlassViewProps) {
+export function GlassView({ children, className, intensity = 70, tint, style }: GlassViewProps) {
   const { isDark, useLiquidGlass } = useTheme();
 
   if (!useLiquidGlass) {
-    return <View className={className} style={style}>{children}</View>;
+    return (
+      <View className={className} style={style}>
+        {children}
+      </View>
+    );
   }
 
   const blurTint = tint ?? (isDark ? "systemMaterialDark" : "systemThinMaterialLight");
 
   return (
-    <BlurView
-      intensity={intensity}
-      tint={blurTint}
-      className={className}
-      style={style}
-    >
+    <BlurView intensity={intensity} tint={blurTint} className={className} style={style}>
       {children}
     </BlurView>
   );

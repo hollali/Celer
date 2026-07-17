@@ -16,7 +16,8 @@ export async function GET(request: Request) {
     }
 
     return Response.json({ data: consents[0] }, { status: 200 });
-  } catch {
+  } catch (err) {
+    console.error("GET /legal-consents error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -39,7 +40,8 @@ export async function PATCH(request: Request) {
 
     const result = await sql`SELECT * FROM legal_consents WHERE user_id = ${user.dbUserId} LIMIT 1`;
     return Response.json({ data: result[0] }, { status: 200 });
-  } catch {
+  } catch (err) {
+    console.error("PATCH /legal-consents error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

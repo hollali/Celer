@@ -12,11 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@clerk/clerk-expo";
 import { useTheme } from "@/lib/ThemeContext";
 import { useFetch, fetchAPI } from "@/lib/fetch";
-import {
-  a11y,
-  a11yButton,
-  a11yHeader,
-} from "@/lib/accessibility";
+import { a11y, a11yButton, a11yHeader } from "@/lib/accessibility";
 
 interface Notification {
   id: string;
@@ -100,14 +96,14 @@ const NotificationsScreen = () => {
             method: "PATCH",
             body: JSON.stringify({ id }),
           },
-          token
+          token,
         );
         refetch();
       } catch (e) {
         // silently fail
       }
     },
-    [getToken, refetch]
+    [getToken, refetch],
   );
 
   const markAllRead = useCallback(async () => {
@@ -119,7 +115,7 @@ const NotificationsScreen = () => {
           method: "PATCH",
           body: JSON.stringify({ markAll: true }),
         },
-        token
+        token,
       );
       refetch();
     } catch (e) {
@@ -127,14 +123,11 @@ const NotificationsScreen = () => {
     }
   }, [getToken, refetch]);
 
-  const grouped = useMemo(
-    () => groupNotifications(notifications ?? []),
-    [notifications]
-  );
+  const grouped = useMemo(() => groupNotifications(notifications ?? []), [notifications]);
 
   const unreadCount = useMemo(
     () => (notifications ?? []).filter((n) => !n.read).length,
-    [notifications]
+    [notifications],
   );
 
   const getBackground = () => {
@@ -146,12 +139,10 @@ const NotificationsScreen = () => {
     <TouchableOpacity
       onPress={() => !item.read && markAsRead(item.id)}
       activeOpacity={0.7}
-      className={`flex-row items-start px-5 py-4 ${
-        item.read ? "opacity-60" : ""
-      }`}
+      className={`flex-row items-start px-5 py-4 ${item.read ? "opacity-60" : ""}`}
       {...a11yButton(
         `${item.title}: ${item.body}`,
-        item.read ? "Already read" : "Tap to mark as read"
+        item.read ? "Already read" : "Tap to mark as read",
       )}
     >
       <View
@@ -169,7 +160,7 @@ const NotificationsScreen = () => {
       <View className="flex-1">
         <View className="flex-row items-center justify-between">
           <Text
-            className={`flex-1 text-base font-JakartaSemiBold ${
+            className={`flex-1 font-JakartaSemiBold text-base ${
               item.read
                 ? "text-gray-500 dark:text-dark-text-secondary"
                 : "text-gray-900 dark:text-dark-text"
@@ -178,17 +169,15 @@ const NotificationsScreen = () => {
           >
             {item.title}
           </Text>
-          {!item.read && (
-            <View className="ml-2 h-2 w-2 rounded-full bg-blue-500" />
-          )}
+          {!item.read && <View className="ml-2 h-2 w-2 rounded-full bg-blue-500" />}
         </View>
         <Text
-          className="mt-1 text-sm font-Jakarta text-gray-500 dark:text-dark-text-secondary"
+          className="mt-1 font-Jakarta text-sm text-gray-500 dark:text-dark-text-secondary"
           numberOfLines={2}
         >
           {item.body}
         </Text>
-        <Text className="mt-1.5 text-xs font-Jakarta text-gray-400 dark:text-dark-text-tertiary">
+        <Text className="mt-1.5 font-Jakarta text-xs text-gray-400 dark:text-dark-text-tertiary">
           {new Date(item.createdAt).toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
@@ -200,13 +189,9 @@ const NotificationsScreen = () => {
     </TouchableOpacity>
   );
 
-  const renderSectionHeader = ({
-    section: [title],
-  }: {
-    section: [string, Notification[]];
-  }) => (
+  const renderSectionHeader = ({ section: [title] }: { section: [string, Notification[]] }) => (
     <Text
-      className="px-5 pt-5 pb-2 text-xs font-JakartaBold uppercase tracking-widest text-slate-400 dark:text-dark-text-secondary"
+      className="px-5 pb-2 pt-5 font-JakartaBold text-xs uppercase tracking-widest text-slate-400 dark:text-dark-text-secondary"
       {...a11yHeader(title)}
     >
       {title}
@@ -227,15 +212,11 @@ const NotificationsScreen = () => {
     return result;
   }, [sections]);
 
-  const renderFlatItem = ({
-    item,
-  }: {
-    item: Notification | string;
-  }) => {
+  const renderFlatItem = ({ item }: { item: Notification | string }) => {
     if (typeof item === "string") {
       return (
         <Text
-          className="px-5 pt-5 pb-2 text-xs font-JakartaBold uppercase tracking-widest text-slate-400 dark:text-dark-text-secondary"
+          className="px-5 pb-2 pt-5 font-JakartaBold text-xs uppercase tracking-widest text-slate-400 dark:text-dark-text-secondary"
           {...a11yHeader(item)}
         >
           {item}
@@ -246,10 +227,7 @@ const NotificationsScreen = () => {
   };
 
   return (
-    <SafeAreaView
-      className="flex-1"
-      style={{ backgroundColor: getBackground() }}
-    >
+    <SafeAreaView className="flex-1" style={{ backgroundColor: getBackground() }}>
       {/* Header */}
       <View className="flex-row items-center justify-between px-5 pb-2 pt-4">
         <TouchableOpacity
@@ -257,14 +235,10 @@ const NotificationsScreen = () => {
           className="h-9 w-9 items-center justify-center rounded-full bg-slate-100 dark:bg-dark-card"
           accessibilityLabel="Back"
         >
-          <Ionicons
-            name="chevron-back"
-            size={20}
-            color={isDark ? "#F5F5F7" : "#0F172A"}
-          />
+          <Ionicons name="chevron-back" size={20} color={isDark ? "#F5F5F7" : "#0F172A"} />
         </TouchableOpacity>
         <Text
-          className="text-lg font-JakartaBold text-slate-900 dark:text-dark-text"
+          className="font-JakartaBold text-lg text-slate-900 dark:text-dark-text"
           {...a11yHeader("Notifications")}
         >
           Notifications
@@ -273,15 +247,10 @@ const NotificationsScreen = () => {
           <TouchableOpacity
             onPress={markAllRead}
             activeOpacity={0.7}
-            className="h-9 items-center justify-center rounded-full bg-slate-100 dark:bg-dark-card px-3"
-            {...a11yButton(
-              "Mark all read",
-              `Mark ${unreadCount} notifications as read`
-            )}
+            className="h-9 items-center justify-center rounded-full bg-slate-100 px-3 dark:bg-dark-card"
+            {...a11yButton("Mark all read", `Mark ${unreadCount} notifications as read`)}
           >
-            <Text className="text-xs font-JakartaSemiBold text-blue-500">
-              Read all
-            </Text>
+            <Text className="font-JakartaSemiBold text-xs text-blue-500">Read all</Text>
           </TouchableOpacity>
         ) : (
           <View className="h-9 w-9" />
@@ -291,23 +260,23 @@ const NotificationsScreen = () => {
       {/* Content */}
       {loading && !refreshing ? (
         <View className="flex-1 items-center justify-center" {...a11y("Loading notifications")}>
-          <ActivityIndicator
-            size="large"
-            color={isDark ? "#F5F5F7" : "#0F172A"}
-          />
-          <Text className="mt-3 text-sm font-Jakarta text-gray-500 dark:text-dark-text-secondary">
+          <ActivityIndicator size="large" color={isDark ? "#F5F5F7" : "#0F172A"} />
+          <Text className="mt-3 font-Jakarta text-sm text-gray-500 dark:text-dark-text-secondary">
             Loading notifications...
           </Text>
         </View>
       ) : error ? (
-        <View className="flex-1 items-center justify-center px-6" {...a11y("Error loading notifications")}>
+        <View
+          className="flex-1 items-center justify-center px-6"
+          {...a11y("Error loading notifications")}
+        >
           <View className="h-16 w-16 items-center justify-center rounded-full bg-red-50 dark:bg-red-900/20">
             <Ionicons name="alert-circle-outline" size={28} color="#EF4444" />
           </View>
-          <Text className="mt-4 text-lg font-JakartaSemiBold text-gray-900 dark:text-dark-text">
+          <Text className="mt-4 font-JakartaSemiBold text-lg text-gray-900 dark:text-dark-text">
             Something went wrong
           </Text>
-          <Text className="mt-2 text-sm font-Jakarta text-gray-500 dark:text-dark-text-secondary text-center">
+          <Text className="mt-2 text-center font-Jakarta text-sm text-gray-500 dark:text-dark-text-secondary">
             {error}
           </Text>
           <TouchableOpacity
@@ -316,7 +285,7 @@ const NotificationsScreen = () => {
             className="mt-5 rounded-full bg-blue-500 px-6 py-3"
             {...a11yButton("Retry", "Try loading notifications again")}
           >
-            <Text className="text-sm font-JakartaBold text-white">Retry</Text>
+            <Text className="font-JakartaBold text-sm text-white">Retry</Text>
           </TouchableOpacity>
         </View>
       ) : flatData.length === 0 ? (
@@ -328,10 +297,10 @@ const NotificationsScreen = () => {
               color={isDark ? "#636366" : "#94A3B8"}
             />
           </View>
-          <Text className="mt-4 text-lg font-JakartaSemiBold text-gray-900 dark:text-dark-text">
+          <Text className="mt-4 font-JakartaSemiBold text-lg text-gray-900 dark:text-dark-text">
             No notifications yet
           </Text>
-          <Text className="mt-2 text-sm font-Jakarta text-gray-500 dark:text-dark-text-secondary text-center">
+          <Text className="mt-2 text-center font-Jakarta text-sm text-gray-500 dark:text-dark-text-secondary">
             You'll see ride updates, promotions, and safety alerts here.
           </Text>
         </View>
@@ -340,9 +309,7 @@ const NotificationsScreen = () => {
           data={flatData}
           renderItem={renderFlatItem}
           keyExtractor={(item, index) =>
-            typeof item === "string"
-              ? `section-${item}`
-              : item.id || `notif-${index}`
+            typeof item === "string" ? `section-${item}` : item.id || `notif-${index}`
           }
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 48 }}

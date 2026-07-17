@@ -25,6 +25,7 @@ import { fetchAPI } from "@/lib/fetch";
 import { calculateDriverTimes } from "@/lib/map";
 import { useLocationStore, useDriverStore, useTabStore } from "@/store";
 import { useTheme } from "@/lib/ThemeContext";
+import { useNetworkStatus } from "@/lib/network";
 import { a11y, a11yButton, a11yImage } from "@/lib/accessibility";
 
 const geocodeCache: Record<string, string> = {};
@@ -39,21 +40,20 @@ const Home = () => {
   const { user } = useUser();
   const { getToken, isLoaded } = useAuth();
   const { isDark, useLiquidGlass } = useTheme();
-  const {
-    setUserLocation,
-    setDestinationLocation,
-    userLatitude,
-    userLongitude,
-  } = useLocationStore();
+  const { setUserLocation, setDestinationLocation, userLatitude, userLongitude } =
+    useLocationStore();
   const { drivers, selectedDriver, setSelectedDriver, setDrivers, clearSelectedDriver } =
     useDriverStore();
+  const { isOffline } = useNetworkStatus();
 
   const [loadingDrivers, setLoadingDrivers] = useState(false);
   const [driverError, setDriverError] = useState<string | null>(null);
   const [rideRequested, setRideRequested] = useState(false);
   const [bookingRide, setBookingRide] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [locationStatus, setLocationStatus] = useState<"loading" | "granted" | "denied" | "unavailable">("loading");
+  const [locationStatus, setLocationStatus] = useState<
+    "loading" | "granted" | "denied" | "unavailable"
+  >("loading");
 
   useEffect(() => {
     if (isLoaded) {
@@ -93,7 +93,11 @@ const Home = () => {
           if (res.ok) {
             const data = await res.json();
             const a = data.address || {};
-            const parts = [a.road, a.neighbourhood || a.suburb || a.quarter, a.city || a.town || a.village].filter(Boolean);
+            const parts = [
+              a.road,
+              a.neighbourhood || a.suburb || a.quarter,
+              a.city || a.town || a.village,
+            ].filter(Boolean);
             if (parts.length > 0) {
               addressText = parts.join(", ");
             } else if (data.display_name) {
@@ -119,56 +123,59 @@ const Home = () => {
     setRefreshing(false);
   }, []);
 
-  const handleRetryDrivers = useCallback(async (location: {
-    latitude: number;
-    longitude: number;
-    address: string;
-  }) => {
-    setDriverError(null);
-    setLoadingDrivers(true);
-    try {
-      const token = await getToken();
-      const userLat = useLocationStore.getState().userLatitude || 0;
-      const userLng = useLocationStore.getState().userLongitude || 0;
+  const handleRetryDrivers = useCallback(
+    async (location: { latitude: number; longitude: number; address: string }) => {
+      setDriverError(null);
+      setLoadingDrivers(true);
+      try {
+        const token = await getToken();
+        const userLat = useLocationStore.getState().userLatitude || 0;
+        const userLng = useLocationStore.getState().userLongitude || 0;
 
-      const params = new URLSearchParams();
-      if (userLat && userLng) {
-        params.set("lat", String(userLat));
-        params.set("lng", String(userLng));
-      }
-      const query = params.toString();
-      const url = `/(api)/driver${query ? `?${query}` : ""}`;
+        const params = new URLSearchParams();
+        if (userLat && userLng) {
+          params.set("lat", String(userLat));
+          params.set("lng", String(userLng));
+        }
+        const query = params.toString();
+        const url = `/(api)/driver${query ? `?${query}` : ""}`;
 
-      const data = await fetchAPI(url, undefined, token);
-      if (data?.data?.length > 0) {
-        const destLat = useLocationStore.getState().destinationLatitude;
-        const destLng = useLocationStore.getState().destinationLongitude;
-        const driversWithTimes = await calculateDriverTimes({
-          markers: data.data,
-          userLatitude: userLat || null,
-          userLongitude: userLng || null,
-          destinationLatitude: destLat || location.latitude,
-          destinationLongitude: destLng || location.longitude,
-        });
-        const list = driversWithTimes || data.data;
-        setDrivers(list);
-        const sorted = [...list].sort((a, b) => (a.time ?? Infinity) - (b.time ?? Infinity));
-        setSelectedDriver(sorted[0].id);
-      } else {
-        setDriverError("No drivers available in your area");
+        const data = await fetchAPI(url, undefined, token);
+        if (data?.data?.length > 0) {
+          const destLat = useLocationStore.getState().destinationLatitude;
+          const destLng = useLocationStore.getState().destinationLongitude;
+          const driversWithTimes = await calculateDriverTimes({
+            markers: data.data,
+            userLatitude: userLat || null,
+            userLongitude: userLng || null,
+            destinationLatitude: destLat || location.latitude,
+            destinationLongitude: destLng || location.longitude,
+          });
+          const list = driversWithTimes || data.data;
+          setDrivers(list);
+          const sorted = [...list].sort((a, b) => (a.time ?? Infinity) - (b.time ?? Infinity));
+          setSelectedDriver(sorted[0].id);
+        } else {
+          setDriverError("No drivers available in your area");
+        }
+      } catch {
+        setDriverError("Unable to find drivers. Please try again.");
+      } finally {
+        setLoadingDrivers(false);
       }
-    } catch {
-      setDriverError("Unable to find drivers. Please try again.");
-    } finally {
-      setLoadingDrivers(false);
-    }
-  }, [getToken, setDrivers, setSelectedDriver]);
+    },
+    [getToken, setDrivers, setSelectedDriver],
+  );
 
   const handleDestinationPress = async (location: {
     latitude: number;
     longitude: number;
     address: string;
   }) => {
+    if (isOffline) {
+      Alert.alert("No Connection", "You need an internet connection to find drivers.");
+      return;
+    }
     setDestinationLocation(location);
     setRideRequested(true);
     setDriverError(null);
@@ -212,6 +219,10 @@ const Home = () => {
 
   const handleConfirmRide = async () => {
     if (!selectedDriver || bookingRide) return;
+    if (isOffline) {
+      Alert.alert("No Connection", "You need an internet connection to book a ride.");
+      return;
+    }
     const driver = drivers.find((d) => d.id === selectedDriver);
     const originAddress = useLocationStore.getState().userAddress;
     const destAddress = useLocationStore.getState().destinationAddress;
@@ -220,19 +231,23 @@ const Home = () => {
     setBookingRide(true);
     try {
       const token = await getToken();
-      const newRide = await fetchAPI("/(api)/ride", {
-        method: "POST",
-        body: JSON.stringify({
-          origin_address: originAddress,
-          destination_address: destAddress,
-          origin_latitude: useLocationStore.getState().userLatitude,
-          origin_longitude: useLocationStore.getState().userLongitude,
-          destination_latitude: useLocationStore.getState().destinationLatitude,
-          destination_longitude: useLocationStore.getState().destinationLongitude,
-          payment_status: "pending",
-          driver_id: driver.id,
-        }),
-      }, token);
+      const newRide = await fetchAPI(
+        "/(api)/ride",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            origin_address: originAddress,
+            destination_address: destAddress,
+            origin_latitude: useLocationStore.getState().userLatitude,
+            origin_longitude: useLocationStore.getState().userLongitude,
+            destination_latitude: useLocationStore.getState().destinationLatitude,
+            destination_longitude: useLocationStore.getState().destinationLongitude,
+            payment_status: "pending",
+            driver_id: driver.id,
+          }),
+        },
+        token,
+      );
 
       setRideRequested(false);
       clearSelectedDriver();
@@ -242,15 +257,20 @@ const Home = () => {
       Alert.alert("Ride Booked", "Your driver is on the way! Pay after you arrive.", [
         {
           text: "Pay Now",
-          onPress: () => router.push(`/(root)/payment?rideData=${encodeURIComponent(JSON.stringify(rideData))}`),
+          onPress: () =>
+            router.push(`/(root)/payment?rideData=${encodeURIComponent(JSON.stringify(rideData))}`),
         },
         { text: "Pay Later", style: "cancel" },
       ]);
     } catch (e) {
-      Alert.alert("Booking Failed", "Could not book ride. Please check your connection and try again.", [
-        { text: "Retry", onPress: handleConfirmRide },
-        { text: "Cancel", style: "cancel" },
-      ]);
+      Alert.alert(
+        "Booking Failed",
+        "Could not book ride. Please check your connection and try again.",
+        [
+          { text: "Retry", onPress: handleConfirmRide },
+          { text: "Cancel", style: "cancel" },
+        ],
+      );
     } finally {
       setBookingRide(false);
     }
@@ -271,49 +291,62 @@ const Home = () => {
       {/* Header */}
       <View className="flex flex-row items-center justify-between px-5 pt-3">
         <View>
-          <Text className="text-lg font-JakartaExtraBold text-black dark:text-dark-text">
+          <Text className="font-JakartaExtraBold text-lg text-black dark:text-dark-text">
             Welcome, {user?.firstName || "Rider"}
           </Text>
-          <Text className="text-sm font-JakartaMedium text-general-200 dark:text-dark-text-secondary">
+          <Text className="font-JakartaMedium text-sm text-general-200 dark:text-dark-text-secondary">
             Where are you headed today?
           </Text>
         </View>
         <TouchableOpacity
           onPress={() => router.push("/profile")}
-          className="w-10 h-10 rounded-full bg-general-300 items-center justify-center overflow-hidden"
+          className="h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-general-300"
           {...a11yButton("View profile", "Navigate to your account settings")}
         >
           {user?.imageUrl ? (
             <Image
               source={{ uri: user.imageUrl }}
-              className="w-full h-full"
+              className="h-full w-full"
               resizeMode="cover"
               {...a11yImage("Your profile photo")}
             />
           ) : (
-            <Image source={icons.profile} className="w-5 h-5" {...a11yImage("Profile placeholder")} />
+            <Image
+              source={icons.profile}
+              className="h-5 w-5"
+              {...a11yImage("Profile placeholder")}
+            />
           )}
         </TouchableOpacity>
       </View>
 
+      {/* Offline banner */}
+      {isOffline && (
+        <View className="mx-5 mt-3 rounded-xl bg-amber-50 p-3 dark:bg-amber-900/20">
+          <Text className="text-center font-JakartaMedium text-xs text-amber-700 dark:text-amber-400">
+            You're offline. GPS still works, but finding drivers requires internet.
+          </Text>
+        </View>
+      )}
+
       {/* Location warning banner */}
       {locationStatus === "denied" && (
-        <View className="mx-5 mt-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl">
-          <Text className="text-amber-700 dark:text-amber-400 text-xs font-JakartaMedium text-center">
+        <View className="mx-5 mt-3 rounded-xl bg-amber-50 p-3 dark:bg-amber-900/20">
+          <Text className="text-center font-JakartaMedium text-xs text-amber-700 dark:text-amber-400">
             Location access denied. Enable it in settings for better driver matching.
           </Text>
         </View>
       )}
       {locationStatus === "unavailable" && (
-        <View className="mx-5 mt-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl">
-          <Text className="text-amber-700 dark:text-amber-400 text-xs font-JakartaMedium text-center">
+        <View className="mx-5 mt-3 rounded-xl bg-amber-50 p-3 dark:bg-amber-900/20">
+          <Text className="text-center font-JakartaMedium text-xs text-amber-700 dark:text-amber-400">
             Location unavailable. Search results may be less accurate.
           </Text>
         </View>
       )}
 
       {/* Map */}
-      <View className="flex-1 rounded-2xl mx-5 mt-4 overflow-hidden">
+      <View className="mx-5 mt-4 flex-1 overflow-hidden rounded-2xl">
         <Map />
       </View>
 
@@ -321,13 +354,17 @@ const Home = () => {
       <GlassView
         intensity={75}
         tint={isDark ? "systemMaterialDark" : "systemChromeMaterialLight"}
-        className={`px-5 pt-5 rounded-t-3xl ${useLiquidGlass ? "" : "bg-white dark:bg-dark-card shadow-lg"}`}
-        style={useLiquidGlass ? {
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
-          overflow: "hidden",
-          maxHeight: rideRequested ? 340 : 260,
-        } : { maxHeight: rideRequested ? 340 : 260 }}
+        className={`rounded-t-3xl px-5 pt-5 ${useLiquidGlass ? "" : "bg-white shadow-lg dark:bg-dark-card"}`}
+        style={
+          useLiquidGlass
+            ? {
+                borderTopLeftRadius: 24,
+                borderTopRightRadius: 24,
+                overflow: "hidden",
+                maxHeight: rideRequested ? 340 : 260,
+              }
+            : { maxHeight: rideRequested ? 340 : 260 }
+        }
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -355,20 +392,23 @@ const Home = () => {
             </>
           ) : (
             <>
-              <Text className="text-lg font-JakartaBold mb-3 text-black dark:text-dark-text" {...a11y("Your ride", "Ride details and confirmation", "header")}>
+              <Text
+                className="mb-3 font-JakartaBold text-lg text-black dark:text-dark-text"
+                {...a11y("Your ride", "Ride details and confirmation", "header")}
+              >
                 Your Ride
               </Text>
 
               {loadingDrivers ? (
                 <View className="items-center py-6" accessibilityLabel="Finding driver">
                   <ActivityIndicator size="large" color="#0286FF" />
-                  <Text className="text-base font-JakartaMedium text-general-200 dark:text-dark-text-secondary mt-2">
+                  <Text className="mt-2 font-JakartaMedium text-base text-general-200 dark:text-dark-text-secondary">
                     Finding nearest driver...
                   </Text>
                 </View>
               ) : hasError ? (
                 <View className="items-center py-4">
-                  <Text className="text-base font-JakartaMedium text-danger-500 dark:text-danger-400 text-center mb-3">
+                  <Text className="mb-3 text-center font-JakartaMedium text-base text-danger-500 dark:text-danger-400">
                     {driverError}
                   </Text>
                   <CustomButton
@@ -388,26 +428,26 @@ const Home = () => {
                   />
                 </View>
               ) : assignedDriver ? (
-                <View className="bg-white dark:bg-dark-card rounded-2xl border border-slate-100 dark:border-dark-border p-4 mb-3">
+                <View className="mb-3 rounded-2xl border border-slate-100 bg-white p-4 dark:border-dark-border dark:bg-dark-card">
                   <View className="flex-row items-center">
-                    <View className="w-14 h-14 rounded-full bg-general-300 dark:bg-dark-bg items-center justify-center overflow-hidden mr-3">
+                    <View className="mr-3 h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-general-300 dark:bg-dark-bg">
                       {assignedDriver.profile_image_url ? (
                         <Image
                           source={{ uri: assignedDriver.profile_image_url }}
-                          className="w-full h-full"
+                          className="h-full w-full"
                           resizeMode="cover"
                         />
                       ) : (
-                        <Text className="text-xl font-JakartaBold text-white">
+                        <Text className="font-JakartaBold text-xl text-white">
                           {assignedDriver.first_name?.charAt(0)}
                         </Text>
                       )}
                     </View>
                     <View className="flex-1">
-                      <Text className="text-base font-JakartaBold text-black dark:text-dark-text">
+                      <Text className="font-JakartaBold text-base text-black dark:text-dark-text">
                         {assignedDriver.first_name} {assignedDriver.last_name}
                       </Text>
-                      <View className="flex-row items-center gap-1 mt-1">
+                      <View className="mt-1 flex-row items-center gap-1">
                         <Text className="text-sm text-general-200 dark:text-dark-text-secondary">
                           ⭐ {assignedDriver.rating}
                         </Text>
@@ -418,23 +458,27 @@ const Home = () => {
                       </View>
                     </View>
                     <View className="items-end">
-                      <Text className="text-lg font-JakartaExtraBold text-primary-500">
-                        {CURRENCY_SYMBOL}{assignedDriver.price}
+                      <Text className="font-JakartaExtraBold text-lg text-primary-500">
+                        {CURRENCY_SYMBOL}
+                        {assignedDriver.price}
                       </Text>
-                      <Text className="text-xs text-general-200 dark:text-dark-text-secondary mt-1">
+                      <Text className="mt-1 text-xs text-general-200 dark:text-dark-text-secondary">
                         ~{Math.round(assignedDriver.time || 0)} min
                       </Text>
                     </View>
                   </View>
-                  <View className="mt-3 pt-3 border-t border-slate-100 dark:border-dark-border">
-                    <Text className="text-xs text-general-200 dark:text-dark-text-secondary" numberOfLines={1}>
+                  <View className="mt-3 border-t border-slate-100 pt-3 dark:border-dark-border">
+                    <Text
+                      className="text-xs text-general-200 dark:text-dark-text-secondary"
+                      numberOfLines={1}
+                    >
                       📍 {useLocationStore.getState().destinationAddress}
                     </Text>
                   </View>
                 </View>
               ) : (
                 <View className="items-center py-6">
-                  <Text className="text-base font-JakartaMedium text-general-200 dark:text-dark-text-secondary">
+                  <Text className="font-JakartaMedium text-base text-general-200 dark:text-dark-text-secondary">
                     No drivers available nearby
                   </Text>
                 </View>

@@ -11,7 +11,7 @@ const envVars = Object.fromEntries(
   envContent
     .split("\n")
     .filter((l) => l && !l.startsWith("#"))
-    .map((l) => l.split("=", 2).map((s) => s.trim().replace(/^["']|["']$/g, "")))
+    .map((l) => l.split("=", 2).map((s) => s.trim().replace(/^["']|["']$/g, ""))),
 );
 
 const DATABASE_URL = envVars.DATABASE_URL;

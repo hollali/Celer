@@ -17,7 +17,7 @@ describe("fetchAPI", () => {
     expect(result).toEqual(mockData);
     expect(global.fetch).toHaveBeenCalledWith(
       "/(api)/driver",
-      expect.objectContaining({ headers: expect.any(Object) })
+      expect.objectContaining({ headers: expect.any(Object) }),
     );
   });
 
@@ -35,7 +35,7 @@ describe("fetchAPI", () => {
         headers: expect.objectContaining({
           Authorization: "Bearer test_token_123",
         }),
-      })
+      }),
     );
   });
 

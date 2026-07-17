@@ -11,16 +11,41 @@ export async function GET(request: Request) {
     const lng = parseFloat(searchParams.get("lng") || "0");
     const vehicleType = searchParams.get("vehicle_type");
 
-    let query = sql`
-      SELECT
-        id, first_name, last_name, profile_image_url, car_image_url,
-        car_seats, rating, vehicle_type,
-        current_latitude, current_longitude
-      FROM drivers
-      WHERE is_available = TRUE
-    `;
+    const radiusKm = 15;
+    const latDelta = radiusKm / 111.32;
+    const lngDelta = radiusKm / (111.32 * Math.cos((lat * Math.PI) / 180));
+    const minLat = lat - latDelta;
+    const maxLat = lat + latDelta;
+    const minLng = lng - lngDelta;
+    const maxLng = lng + lngDelta;
 
-    if (vehicleType) {
+    const useLocation = lat !== 0 && lng !== 0;
+
+    let query;
+    if (useLocation && vehicleType) {
+      query = sql`
+        SELECT
+          id, first_name, last_name, profile_image_url, car_image_url,
+          car_seats, rating, vehicle_type,
+          current_latitude, current_longitude
+        FROM drivers
+        WHERE is_available = TRUE
+          AND vehicle_type = ${vehicleType}
+          AND current_latitude BETWEEN ${minLat} AND ${maxLat}
+          AND current_longitude BETWEEN ${minLng} AND ${maxLng}
+      `;
+    } else if (useLocation) {
+      query = sql`
+        SELECT
+          id, first_name, last_name, profile_image_url, car_image_url,
+          car_seats, rating, vehicle_type,
+          current_latitude, current_longitude
+        FROM drivers
+        WHERE is_available = TRUE
+          AND current_latitude BETWEEN ${minLat} AND ${maxLat}
+          AND current_longitude BETWEEN ${minLng} AND ${maxLng}
+      `;
+    } else if (vehicleType) {
       query = sql`
         SELECT
           id, first_name, last_name, profile_image_url, car_image_url,
@@ -29,14 +54,24 @@ export async function GET(request: Request) {
         FROM drivers
         WHERE is_available = TRUE AND vehicle_type = ${vehicleType}
       `;
+    } else {
+      query = sql`
+        SELECT
+          id, first_name, last_name, profile_image_url, car_image_url,
+          car_seats, rating, vehicle_type,
+          current_latitude, current_longitude
+        FROM drivers
+        WHERE is_available = TRUE
+      `;
     }
 
     const response = await query;
 
-    response.sort((a: typeof response[0], b: typeof response[0]) => b.rating - a.rating);
+    response.sort((a: (typeof response)[0], b: (typeof response)[0]) => b.rating - a.rating);
 
     return Response.json({ data: response }, { status: 200 });
-  } catch {
+  } catch (err) {
+    console.error("GET /driver error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

@@ -26,7 +26,8 @@ export async function GET(request: Request) {
     }
 
     return Response.json({ data: notifications }, { status: 200 });
-  } catch {
+  } catch (err) {
+    console.error("GET /notifications error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -56,7 +57,8 @@ export async function PATCH(request: Request) {
     }
 
     return Response.json({ error: "Missing notification_id or mark_all_read" }, { status: 400 });
-  } catch {
+  } catch (err) {
+    console.error("PATCH /notifications error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -80,7 +82,8 @@ export async function POST(request: Request) {
     `;
 
     return Response.json({ data: result[0] }, { status: 201 });
-  } catch {
+  } catch (err) {
+    console.error("POST /notifications error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

@@ -54,7 +54,8 @@ export async function GET(request: Request) {
     `;
 
     return Response.json({ data: messages.reverse() }, { status: 200 });
-  } catch {
+  } catch (err) {
+    console.error("GET /messages error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -70,7 +71,7 @@ export async function POST(request: Request) {
     if (!conversation_id || !text) {
       return Response.json(
         { error: "Missing required fields: conversation_id, text" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -81,7 +82,7 @@ export async function POST(request: Request) {
     if (trimmedText.length > MAX_MESSAGE_LENGTH) {
       return Response.json(
         { error: `Message too long (max ${MAX_MESSAGE_LENGTH} characters)` },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -129,7 +130,8 @@ export async function POST(request: Request) {
     `;
 
     return Response.json({ data: result }, { status: 201 });
-  } catch {
+  } catch (err) {
+    console.error("POST /messages error:", err);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
