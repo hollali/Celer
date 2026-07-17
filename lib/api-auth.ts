@@ -55,25 +55,41 @@ export async function authenticateRequest(request: Request): Promise<AuthUser | 
     );
 
     if (userResult.length === 0 && email) {
-      userResult = await withRetry(
-        () => sql`
-        INSERT INTO users (clerk_id, name, email)
-        VALUES (${clerkId}, ${name}, ${email})
-        ON CONFLICT (email) DO UPDATE SET clerk_id = ${clerkId}
-        RETURNING id
-      `,
-      );
+      try {
+        userResult = await withRetry(
+          () => sql`
+          INSERT INTO users (clerk_id, name, email)
+          VALUES (${clerkId}, ${name}, ${email})
+          ON CONFLICT (email) DO UPDATE SET clerk_id = ${clerkId}
+          RETURNING id
+        `,
+        );
+      } catch {
+        userResult = await withRetry(
+          () => sql`
+          SELECT id FROM users WHERE email = ${email} LIMIT 1;
+        `,
+        );
+      }
     }
 
     if (userResult.length === 0) {
-      userResult = await withRetry(
-        () => sql`
-        INSERT INTO users (clerk_id, name, email)
-        VALUES (${clerkId}, ${name}, ${email})
-        ON CONFLICT (clerk_id) DO NOTHING
-        RETURNING id
-      `,
-      );
+      try {
+        userResult = await withRetry(
+          () => sql`
+          INSERT INTO users (clerk_id, name, email)
+          VALUES (${clerkId}, ${name}, ${email})
+          ON CONFLICT (clerk_id) DO UPDATE SET email = ${email}
+          RETURNING id
+        `,
+        );
+      } catch {
+        userResult = await withRetry(
+          () => sql`
+          SELECT id FROM users WHERE clerk_id = ${clerkId} LIMIT 1;
+        `,
+        );
+      }
     }
 
     if (userResult.length > 0) {
