@@ -54,6 +54,17 @@ export async function authenticateRequest(request: Request): Promise<AuthUser | 
     `,
     );
 
+    if (userResult.length === 0 && email) {
+      userResult = await withRetry(
+        () => sql`
+        INSERT INTO users (clerk_id, name, email)
+        VALUES (${clerkId}, ${name}, ${email})
+        ON CONFLICT (email) DO UPDATE SET clerk_id = ${clerkId}
+        RETURNING id
+      `,
+      );
+    }
+
     if (userResult.length === 0) {
       userResult = await withRetry(
         () => sql`
